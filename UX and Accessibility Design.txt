@@ -1,0 +1,408 @@
+UX and Accessibility Design
+
+1.0 Foundational Design Philosophy & Standards
+1.1. Core Philosophy: The "Data Principal First" Doctrine
+The primary goal of the CMS user experience is to demystify data privacy for the Indian citizen and empower them with genuine agency over their personal data. This is not just a design objective; it is a strategic imperative rooted in the principles of the Digital Personal Data Protection Act (DPDPA), 2023. Our design philosophy is "Compliance through Clarity." We operate on the foundational belief that a Data Principal who clearly understands their rights and choices is empowered to give informed, lawful consent. Therefore, every design decision detailed in this document—from the color of a button to the wording of a label—must serve the dual purpose of being effortlessly understandable and building unimpeachable user trust.
+The statutory rights granted to individuals in the DPDPA are not abstract legal concepts; they are the core requirements that dictate the entire user experience. This design system translates these rights into concrete, non-negotiable UX principles.
+Right to be Informed (DPDPA Sec 5): This translates to the UX Principle of Radical Transparency. The design of all consent notices and information displays MUST be clear, complete, and structured to prevent misinterpretation. As specified in DPDPR Rule 3, the UI will present an itemized description of personal data and purposes in plain language, ensuring the Data Principal is fully informed before making a choice.
+Right to Withdraw (DPDPA Sec 6(4)): This translates to the UX Principle of Effortless Agency. The law mandates that withdrawing consent must be as easy as giving it. This principle will be strictly enforced. The user interface MUST provide a simple, direct, and easily discoverable path for revoking any active consent. This right will be presented as a first-class feature, not a hidden option, fulfilling the requirements of BRD 4.3.2.
+Right to Redressal (DPDPA Sec 13): This translates to the UX Principle of Accessible Recourse. The design MUST provide a prominent, simple, and unambiguous mechanism for any Data Principal to raise a grievance or data request. The system will provide clear feedback on the status of their request at every stage, as detailed in the workflow of BRD 4.5.
+1.2. Non-Negotiable Compliance with National Digital Standards
+To ensure the CMS is a trusted and integral part of India's digital public infrastructure, its design and implementation are strictly governed by established national standards.
+Formal Declaration: All user-facing components and interfaces of the CMS MUST conform to the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA. This is the minimum acceptable standard, as mandated by the Guidelines for Indian Government Websites & Apps (GIGW 3.0), ensuring the platform is usable by all citizens, including persons with disabilities.
+Key Mandates & Implementation:
+GIGW 3.0 Mandate
+Our Design System's Implementation
+Keyboard Accessibility (GIGW 5.2.21)
+Every interactive element, without exception—including buttons, links, form fields, toggles, tabs, and modals—will have a clear, highly visible :focus state. All functionality will be fully reachable and operable using only the Tab, Shift+Tab, Enter, and Space keys, with no keyboard traps.
+Screen Reader Support (GIGW 5.2.1)
+Semantic HTML5 (<nav>, <main>, <button>, etc.) will be used to provide inherent structure. All form inputs MUST be programmatically linked to their <label>s. All non-text content, such as icons, MUST have appropriate text alternatives (aria-label) or be decoratively hidden (aria-hidden="true").
+Color Contrast (GIGW 5.2.14)
+All text-on-background and interactive-element-on-background color combinations MUST be programmatically validated to meet or exceed the 4.5:1 ratio for normal text and 3:1 for large text. This is a non-negotiable automated check in both the design and build processes.
+
+Formal Declaration: The visual identity of the CMS is not subject to arbitrary design choices. It is strictly governed by the Digital Brand Identity Manual 3.0 to ensure it is immediately recognizable as a trusted, consistent, and official Government of India platform. All colors, fonts, and icons are derived directly from this manual.
+The Definitive Color Palette:
+The following color variables, derived from the manual's principles and your specific directive, define the complete visual palette. These hex codes MUST be used for their designated purposes.
+Role
+Variable Name
+Hex Code
+Conformance & Purpose
+Backgrounds
+--bg-color
+#ffffff
+The primary background color for all pages and content areas, ensuring maximum clarity and readability. Conforms to DBIM functional palette.
+Text & Headings
+--text-color
+#212529
+Primary color for body text. Chosen for high contrast against --bg-color. Conforms to DBIM guidelines for readable text.
+
+
+--heading-color
+#051d2e
+Color for all major headings, creating a clear visual hierarchy.
+
+
+--subtle-text-color
+#6c757d
+For secondary information like helper text, metadata, and timestamps, where less emphasis is required.
+Primary Accent
+--accent-color
+#1d5c9e
+The main brand accent color, used for primary buttons and key interactive elements, selected from a DBIM-compliant primary palette group.
+
+
+--accent-color-hover
+#2779c9
+The color of a primary accent element when in a :hover or :focus state, providing clear interactive feedback as required by DBIM 4.5.
+Borders & Separators
+--border-color
+rgba(33, 37, 41, 0.15)
+For all standard borders and dividers, creating subtle but clear separation of UI elements.
+
+    
+ **Note on Functional Colors:** In addition to the brand palette, the mandatory functional colors from the **DBIM Functional Palette (Table 1)** **MUST** be used for all status-specific communication:
+*   **Success:** Liberty Green (`#198754`)
+*   **Error:** Coral Red (`#DC3545`)
+*   **Warning:** Mustard Yellow (`#FFC107`)
+*   **Information / Hyperlinks:** Blue (`#0D6EFD`)
+   
+The Official Typeface:
+The Noto Sans font family is the exclusive typeface for all text across all interfaces and all supported languages, as mandated by DBIM Section 4.1. The typographic scale (font sizes and weights) defined in DBIM Section 4.3 will be strictly implemented in the application's central CSS theme.
+The Official Icon System:
+The CMS will exclusively use Style 1: Line icons from the DBIM Toolkit's Visual Library, as specified in DBIM Section 3.3. This ensures visual consistency and a professional aesthetic. Icons will be colored using --text-color or --accent-color as contextually appropriate.
+1.3. The Multilingual & RTL Mandate
+In accordance with DPDPA Sec 5(3) and Sec 6(3), full localization for English and all 22 scheduled Indian languages is a core, non-negotiable architectural requirement for all Data Principal-facing interfaces.
+Text Expansion: All UI components containing text (e.g., buttons, menu items, tabs) MUST be designed with flexible containers using modern CSS properties like flexbox or grid. Fixed-width containers for text elements are forbidden, as they will break when translated into languages with longer word lengths.
+Right-to-Left (RTL) Support: To support scripts like Urdu and Sindhi, the entire CSS architecture MUST be built using CSS logical properties (e.g., margin-inline-start instead of margin-left). This ensures the application layout correctly mirrors itself for RTL languages automatically.
+The language selection mechanism must be prominent and easily accessible in the application header, as prescribed by the DBIM (Sec 7.5.1). It will be implemented as a dropdown menu triggered by the "अ | A" icon and will list languages in both their native script and English (e.g., "हिन्दी / Hindi") for maximum clarity.
+2.0 The Core Component Library: Building Blocks of the User Interface
+2.1. Introduction to the Component-Based Architecture
+The user interface of the CMS is not constructed as a series of monolithic pages. Instead, it is built using the principles of Atomic Design. This is a hierarchical methodology where simple, fundamental elements are composed into larger, more complex structures.
+Atoms: These are the most basic building blocks—the fundamental HTML tags styled according to our design language (e.g., <Button />, <Input />, <Icon />). They cannot be broken down further.
+Molecules: These are groups of atoms bonded together to form a simple, functional unit (e.g., a <FormField />, which combines a <Label />, an <Input />, and helper text).
+Organisms: These are more complex UI components assembled from molecules and atoms to form distinct sections of an interface (e.g., a <Header /> or a <ConsentCard />).
+This approach ensures maximum reusability, consistency, and maintainability across the entire application.
+All components will be developed as functional React components using TypeScript for strict type-checking of all component properties (props). This prevents common errors and makes the components easier for developers to consume. Component-level styling will be implemented using a methodology like CSS Modules to ensure that styles are locally scoped and do not create conflicts across the application.
+2.2. Atoms: The Fundamental Building Blocks
+This section defines the API and accessibility requirements for the most fundamental components.
+Purpose: The primary component for all user-initiated actions.
+Accessibility Mandate: Must render as a semantic <button> element. If the button's content (children) is only an <Icon />, the aria-label prop is mandatory to describe the action to screen readers.
+Props (API):
+| Prop Name | Type | Required | Description |
+| :------------ | :------------------------ | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| variant | 'primary' \| 'secondary' \| 'text' | No | Defaults to 'secondary'. The 'primary' variant MUST use --accent-color and is reserved for the single, main call-to-action on a page or in a modal. |
+| onClick | () => void | Yes | The function to execute when the button is clicked. |
+| disabled | boolean | No | If true, the button is visually styled as disabled and cannot be interacted with. |
+| isLoading | boolean | No | If true, the button will display a loading spinner, become disabled, and add aria-disabled="true". |
+| iconLeft / iconRight | React.ReactNode | No | Allows for an <Icon /> component to be placed before or after the button text. |
+| children | React.ReactNode | Yes | The text or element to display inside the button. |
+Visual States: The component's CSS MUST include distinct styles for default, :hover, :focus-visible, and disabled states, directly corresponding to the interaction styles defined in DBIM Section 4.5. The :focus-visible outline MUST be highly prominent.
+Purpose: To provide consistent, resolution-independent, and accessible iconography across the application.
+Implementation: This component will be a wrapper that dynamically imports and renders SVG files sourced exclusively from the DBIM Toolkit's Visual Library (Style 1: Line icons).
+Props (API):
+| Prop Name | Type | Required | Description |
+| :----------- | :------------------------------- | :------- | :------------------------------------------------------------------------------------------------------ |
+| iconName | string | Yes | The name of the icon file to render (e.g., 'download'). |
+| size | 'sm' \| 'md' \| 'lg' \| 'xl' | No | Maps to the predefined sizes in the DBIM (e.g., 24px, 32px). Defaults to 'md'. |
+| color | string | No | The color of the icon. Defaults to currentColor to inherit the text color of its parent element. |
+Accessibility: The rendered SVG MUST have aria-hidden="true" by default. It is considered a decorative element and should always be accompanied by text (e.g., inside a <Button>) or be part of a larger component that provides an appropriate aria-label.
+Purpose: To provide a clear, mobile-friendly control for managing binary on/off states, used exclusively for optional consents.
+Accessibility Mandate: To ensure semantic correctness and accessibility, this component will be implemented as a standard <input type="checkbox"> that is visually styled to look like a switch. This is a crucial implementation detail.
+Props (API):
+| Prop Name | Type | Required | Description |
+| :---------- | :------------- | :------- | :--------------------------------------------------------------------------------------------- |
+| label | string | Yes | The text label describing the purpose of the toggle. |
+| id | string | Yes | A unique ID that programmatically links the <label> to the hidden <input>. |
+| checked | boolean | Yes | The controlled state of the toggle (on or off). |
+| onChange | (isChecked: boolean) => void | Yes | The callback function executed when the user interacts with the toggle. |
+| disabled | boolean | No | If true, the toggle is visually disabled and cannot be interacted with. |
+Purpose: To display concise, color-coded status information, such as the status of a grievance ticket.
+Props (API):
+| Prop Name | Type | Required | Description |
+| :-------- | :-------------------------------------------- | :------- | :------------------------------------------------------------------------------------------------------ |
+| variant | 'info' \| 'success' \| 'warning' \| 'error' \| 'neutral' | Yes | Determines the background color of the badge. The colors MUST map directly to the Functional Palette defined in the DBIM and our foundational design language. |
+| children| React.ReactNode | Yes | The text to be displayed within the badge. |
+2.3. Molecules: Simple Component Assemblies
+This section defines the API and composition of simple components that are assembled from the Atoms defined in Section 2.2. These molecules form the next layer of our design system, providing consistent, self-contained units of functionality for use in more complex layouts.
+Purpose: To create a fully accessible and consistently styled form field for user input. This component is the standard building block for all forms in the CMS.
+Composition: This molecule is an assembly of the following Atoms:
+A <Label /> (a styled <label> element)
+An <Input /> or <Textarea /> (styled <input> or <textarea>)
+A <div> for optional helper text, styled with --subtle-text-color.
+A <div> for an optional error message, styled with --error-color from the functional palette.
+Accessibility Mandate: This component's primary purpose is to enforce accessibility best practices for forms. The rendered <label>'s htmlFor attribute MUST be programmatically linked to the <input>'s id. When an errorMessage is present, the error message element MUST be given a unique ID and the <input> element must have its aria-describedby attribute set to that ID. This ensures screen readers announce the error in context with the field.
+Props (API):
+| Prop Name | Type | Required | Description |
+| :-------------- | :---------------- | :------- | :------------------------------------------------------------------------------------------------------------------------ |
+| id | string | Yes | A unique identifier used to link the <label> to the <input>. |
+| label | string | Yes | The visible text label for the form field. |
+| type | 'text' \| 'email' \| 'password' \| 'textarea' | No | Defaults to 'text'. If 'textarea', it renders a <textarea> instead of an <input>. |
+| required | boolean | No | If true, a visual indicator (e.g., an asterisk) is displayed next to the label. |
+| placeholder | string | No | The placeholder text for the input field. |
+| helperText | string | No | Optional subtle text displayed below the input field to provide guidance or context. |
+| errorMessage | string | No | If a string is provided, an error message is displayed below the field, and the field border is styled with the error color. |
+| value | string | Yes | The controlled value of the input field. |
+| onChange | (value: string) => void | Yes | The callback function executed when the input value changes. |
+Purpose: To provide the single, consistent, and globally accessible mechanism for users to switch the interface language, as mandated by DPDPA Sec 5(3) and DBIM Sec 7.5.1.
+Composition: This molecule is an assembly of:
+A <Button /> with variant='text'.
+An "अ | A" <Icon /> inside the button, as prescribed by the DBIM.
+A dropdown/popover menu that appears on click, listing all available languages.
+Implementation Details: The dropdown menu will list each language in both its native script and English (e.g., "हिन्दी / Hindi"). The current active language will be visually highlighted. When a new language is selected, the onSelectLanguage callback is triggered, which the parent application will use to change the locale and re-render the UI with translated content.
+Props (API):
+| Prop Name | Type | Required | Description |
+| :------------------ | :---------------------------- | :------- | :---------------------------------------------------------------------------------- |
+| availableLanguages| Array<{code: string, name: string}> | Yes | An array of language objects to populate the dropdown. |
+| currentLanguage | string | Yes | The code of the currently active language (e.g., 'en', 'hi'). |
+| onSelectLanguage | (code: string) => void | Yes | The callback function executed when a user selects a new language from the list. |
+Purpose: To display system-level feedback to the user in a non-disruptive manner, such as confirming a successful action or reporting a global error.
+Composition: This molecule is an assembly of:
+An <Icon /> corresponding to the alert's variant (e.g., a checkmark for success, an exclamation point for error).
+A <span> containing the message text.
+An optional close <Button /> with an "X" icon if the alert is dismissible.
+Accessibility Mandate: This component MUST set its role attribute dynamically based on the variant. For 'success' and 'info', it will use role="status" (polite). For 'warning' and 'error', it MUST use role="alert" (assertive), ensuring that critical messages interrupt the screen reader's flow to be announced immediately.
+Props (API):
+| Prop Name | Type | Required | Description |
+| :-------------- | :-------------------------------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| variant | 'info' \| 'success' \| 'warning' \| 'error' | Yes | Determines the color and icon of the alert, mapping directly to the Functional Palette. |
+| message | string | Yes | The text content of the alert message. |
+| isDismissible | boolean | No | If true, a close button is rendered. Defaults to true. |
+| onClose | () => void | No | A callback function executed when the user clicks the close button. Required if isDismissible is true. |
+3.0 Composite Components & Layouts (The "Organisms")
+This section defines the larger, self-contained components that structure the main sections of the CMS interfaces. These "Organisms" are assembled from the Atoms and Molecules defined in Section 2 and are designed to be composed into full page templates.
+3.1. Organism: The <Header />
+Purpose: To provide a consistent, branded, and accessible navigation header for all pages within a specific portal (e.g., the Data Principal Portal).
+Composition: This organism is a complex assembly of several molecules and atoms, arranged in a responsive layout. It includes:
+The official Government of India Logo Lockup as prescribed by the Digital Brand Identity Manual. The specific lockup (e.g., Header 2) will be determined by the portal's context.
+A primary navigation menu (<nav> element with a list of links).
+The <LanguageSelector /> molecule.
+A user profile area, typically a dropdown menu triggered by a <UserAvatar /> molecule, containing links to "My Profile" and "Logout."
+Accessibility Mandate: The <Header /> component is critical for site navigation and accessibility.
+It MUST be wrapped in a semantic <header> tag.
+It MUST include a "Skip to Main Content" link as the very first focusable element on the page. This link is visually hidden by default but becomes visible when it receives keyboard focus, allowing keyboard-only and screen reader users to bypass the navigation links and jump directly to the main page content.
+The primary navigation MUST be wrapped in a <nav> element with an appropriate aria-label (e.g., aria-label="Main Navigation").
+Props (API):
+| Prop Name | Type | Required | Description |
+| :-------------- | :---------------------------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| user | Object { name: string, avatarUrl?: string } | No | If a user object is provided, the profile dropdown is rendered. If not, a "Login" <Button /> is shown instead. |
+| navLinks | Array<{ label: string, href: string }> | Yes | An array of objects to construct the primary navigation menu. |
+| languageProps | (Props for <LanguageSelector />) | Yes | All the props required by the <LanguageSelector /> molecule, passed down to it. |
+| onLogout | () => void | No | A callback function for the "Logout" action in the user profile dropdown. Required if a user object is provided. |
+3.2. Organism: The <ConsentCard />
+Purpose: To serve as the primary UI for displaying and managing a single consent artifact on the "My Consents" page of the Data Principal Portal.
+Composition: This organism assembles several components into a clear, card-based layout:
+A heading with the purposeName.
+A paragraph with the purposeDescription.
+A <ToggleSwitch /> molecule for managing optional consents.
+A disabled lock <Icon /> with a tooltip for mandatory consents.
+A metadata section displaying the status (using a <Badge />) and lastUpdatedAt timestamp.
+A footer area with action <Button />s like "View Details" or "Withdraw."
+BRD/DPDPA Mapping: This component is the primary interface for fulfilling BRD 4.3.2 (Modify or Revoke Consent) and enabling the Right to Withdraw (DPDPA Sec 6(4)).
+Props (API):
+| Prop Name | Type | Required | Description |
+| :------------- | :------------------------------ | :------- | :------------------------------------------------------------------------------------------------------ |
+| purpose | Object | Yes | The full purpose object, containing name, description, isMandatory, etc. |
+| consent | Object | Yes | The consent artifact object, containing status, lastStatusChangeAt, etc. |
+| onWithdraw | (artifactId: string) => void | Yes | A callback function passed to the "Withdraw" button. |
+| onToggle | (purposeKey: string, grant: boolean) => void | Yes | A callback passed to the <ToggleSwitch /> for updating optional consents. |
+3.3. Organism: The <GrievanceTicketRow />
+Purpose: To display a summary of a single grievance ticket in a list or table view, primarily for the Data Principal and DPO dashboards.
+Composition: A row in a table or a list item card containing:
+The referenceNumber text.
+The category text.
+A <Badge /> component to visually represent the ticket's status.
+A timestamp for when the ticket was createdAt.
+A "View Details" <Button /> with variant='text'.
+BRD/DPDPA Mapping: This is the building block for the BRD 4.5.2 (Complaint Status Dashboard).
+Props (API):
+| Prop Name | Type | Required | Description |
+| :-------- | :------- | :------- | :----------------------------------------------------------------------- |
+| ticket | Object | Yes | The GrievanceTicketSummary object containing all the necessary data. |
+| onView | (ticketId: string) => void | Yes | A callback function passed to the "View Details" button to navigate the user. |
+4.0 Page-Level Blueprints & Workflows
+This section provides the blueprints for the key interfaces of the CMS. These are not merely static mockups; they are visual representations of the user workflows, illustrating how the component library is composed to create functional and accessible pages.
+4.1. The Consent Collection Experience (First-Time User)
+This is one of the most critical user flows, as it is where a Data Principal first interacts with the system and where "informed consent" is established.
+This self-contained React component encapsulates the entire consent collection UI. It is designed to be embedded by a Data Fiduciary into their own registration or onboarding pages.
+Composition:
+A loading state (e.g., a skeleton screen) displayed while fetching notice data.
+An error state (using an <Alert />) if the notice fails to load.
+The notice content (notice.content) rendered clearly at the top.
+A list of purpose-specific <ConsentCard /> sub-components, one for each purpose returned from the API.
+A primary action <Button /> (e.g., "Accept & Continue") that is disabled until all mandatory choices are implicitly accepted.
+This diagram illustrates the user and system journey for a successful consent grant.
+
+
+
+4.2. The Data Principal Dashboard
+User Goal: Upon logging in, the Data Principal must immediately understand their current consent posture and identify any actions that require their attention, without feeling overwhelmed. The design prioritizes clarity and actionable insights over data density.
+Descriptive Blueprint:
+The page opens with the standard CMS <Header />, featuring the Government of India logo lockup, the Data Principal's name in a profile dropdown, and the prominent <LanguageSelector />. The main content area is structured with generous whitespace on a clean, white background (--bg-color).
+Primary Greeting: Below the header, a single, large heading (<h1>, styled with --heading-color) provides a personalized welcome: "Welcome, [User Name]."
+Actionable Summary Grid: Immediately following the greeting is a responsive grid of three to four "Key Metric" cards. These are not just numbers; they are interactive entry points. Each card is a distinct <div> with a subtle border (--border-color) and rounded corners.
+Active Consents Card: A large, bold number (e.g., "7") is the focal point. Below it, the label "Active Consents" is rendered in --text-color. The entire card is a clickable link that navigates the user directly to the "My Consents" page, pre-filtered to show only 'active' consents.
+Expiring Soon Card: This card is conditionally rendered only if there are consents nearing expiration. It features a prominent warning <Icon /> (using --warning-color) next to the large number. The label reads "Consents Expiring Soon". Clicking this card navigates to the "My Consents" page, pre-filtered for consents that are 'active' and expiring within the next 30 days.
+Open Grievances Card: A card displaying the number of currently open ('submitted' or 'in_progress') grievance tickets. A blue information <Icon /> (using --accent-color) sits beside the number. The label is "Open Requests". Clicking this card navigates directly to the "My Grievances" page, pre-filtered to show only open tickets.
+Quick Actions Panel: Below the metric grid, a dedicated section with a subtle heading "What would you like to do?" features two large, prominent buttons:
+A <Button variant="primary"> with the label "Manage All My Consents".
+A <Button variant="secondary"> with the label "Raise a New Grievance or Request".
+This design provides clear, task-oriented pathways for the user's most common goals.
+Recent Activity Feed: The final section on the dashboard is a "Recent Activity" list. It displays the last 3-5 events from the user's audit log, translated into a human-readable format. Each list item contains:
+An icon representing the action (e.g., a checkmark for a grant, a slashed-through circle for a withdrawal).
+A descriptive string: "You withdrew consent for 'Promotional Newsletter' with [Fiduciary Name]."
+A subtle timestamp below the description: "2 days ago".
+This workflow is designed with extreme care to ensure the user's choice is deliberate, informed, and compliant with DPDPA Sec 6(5).
+Screen 1: The Initial State on the "My Consents" Page
+The user navigates to the "My Consents" page. They see a list of <ConsentCard /> organisms.
+The card for a mandatory purpose, such as "Core Service Functionality," is visually distinct. The <ToggleSwitch /> is replaced by a static lock <Icon /> colored with --subtle-text-color. A tooltip on the icon explains, "This consent is required for the service to function."
+Next to this disabled control is a text-based <Button /> with the label "Request to Withdraw...". The ellipsis is intentionally included to signify that this action will trigger a further step, not an immediate result.
+Screen 2: The Confirmation Modal - A "Moment of Clarity"
+Upon clicking "Request to Withdraw...", a modal dialog appears, overlaying the page with a dark, semi-transparent scrim. This action immediately focuses the user's attention.
+The modal is structured as a large <Alert variant="warning">. A large warning <Icon /> is prominently displayed at the top.
+Heading (<h2>): The heading is a direct question: "Are You Absolutely Sure?"
+Body Text: Below the heading is the critical warning message, sourced directly from the API's 428 Precondition Required response. The text is rendered in standard --text-color for readability, but key phrases are made bold to draw attention: "Withdrawing consent for 'Core Service Functionality' will result in the permanent deletion of your account and all associated data. This action cannot be undone. To proceed, please confirm your choice."
+Action Buttons: At the bottom of the modal are two clearly separated and labeled buttons:
+On the left, a <Button variant="secondary"> with the label "Cancel". Clicking this simply closes the modal with no further action.
+On the right, a <Button variant="primary"> that is styled with the red --error-color. The button's label is explicit and reinforces the consequence: "Confirm & Permanently Delete My Account".
+Screen 3: The Final Confirmation and System Logout
+When the user clicks the red "Confirm..." button, the button immediately enters its isLoading state to provide feedback that the final, irreversible action is being processed.
+Upon receiving a successful 200 OK from the API, the modal disappears. The entire page is replaced with a simple, centered message.
+Heading (<h1>): "Request Processed"
+Body Text: "Your request for account deletion has been successfully processed. You will be logged out automatically in 5 seconds."
+A countdown timer is shown, and the user is then programmatically logged out and redirected to the main login page.
+4.3. The DPO Dashboard
+User Goal: The DPO or auditor must be able to dissect the system's history with precision, finding the exact records needed to answer a regulatory inquiry or investigate an incident. The design prioritizes powerful functionality and data clarity over aesthetic minimalism.
+Descriptive Blueprint:
+The page is dominated by a two-part layout.
+Top Section: The Filter Panel
+A container with a subtle background (--border-color at 5% opacity) houses a series of advanced filtering controls. Each filter is a <FormField /> molecule.
+Controls include:
+A text input for Principal ID.
+A multi-select dropdown for Action Type, allowing the DPO to select several actions at once (e.g., 'CONSENT_GRANT' and 'CONSENT_WITHDRAW').
+A dropdown for Initiator.
+Two date-picker inputs for Start Date and End Date.
+Below the fields are a primary <Button /> ("Apply Filters") and a text <Button /> ("Clear All Filters").
+Bottom Section: The Results Data Table
+This is a large, information-dense table with sortable headers.
+Columns: Timestamp, Principal ID, Action, Initiator, and a final, wider Details column.
+Row Content:
+Timestamp is formatted for clarity (e.g., "26 May 2025, 14:30:15 IST").
+Action is displayed using a <Badge /> component for quick visual identification (e.g., 'GRANT' is green, 'WITHDRAW' is red).
+The Details column contains a human-readable summary of the log's JSON details field (e.g., "Purpose: 'Marketing Newsletter'"). Next to the summary is a small "View Raw JSON" button.
+Interaction: Clicking the "View Raw JSON" button opens a modal dialog that displays the full, prettified JSON object from the log's details field, allowing for deep forensic inspection.
+Footer: The page footer contains a <Pagination /> organism to navigate through large result sets and a prominent <Button /> labeled "Export Results as CSV."
+5.0: UX for System States & Feedback
+5.1. Error Handling UX: A Constructive and Clear Approach
+The system's approach to error handling is guided by a core principle: Be helpful, not accusatory. Error messages are an integral part of the user experience and must be designed to guide the user toward a successful outcome. They will be clear, concise, and constructive, adhering strictly to the design principles of GIGW 3.0 (Sec 8.3).
+5.1.1. Inline Validation Errors (For Forms)
+Context: This pattern is used for real-time feedback on user input within forms, such as the Grievance Submission form or the DPO's Notice Creation form.
+Interaction Design:
+Trigger: Validation is triggered on field blur (when the user leaves an input field) for immediate feedback, and again on form submission for a final check.
+Visual Cue: When validation fails, the <FormField /> component will display a red border (--error-color).
+Error Message: A concise, human-readable error message appears directly below the input field, also colored with --error-color. The message is specific to the error (e.g., "Please enter a valid email address," "This field is required," "Password must be at least 12 characters.").
+Accessibility: The error message div is programmatically linked to the input via the aria-describedby attribute, ensuring that a screen reader announces both the field's label and its specific error.
+5.1.2. Form-Level Summary Errors
+Context: When a user submits a form with multiple errors, this pattern prevents them from having to hunt for each individual issue.
+Interaction Design:
+Upon a failed submission, an <Alert variant="error"> component appears at the top of the form.
+The alert contains a heading, "Please correct the errors below," followed by a bulleted list. Each item in the list names a field with an error and is a clickable link that shifts focus directly to the corresponding invalid <FormField />.
+5.1.3. Global Non-Modal Notifications (Toasts/Snackbars)
+Context: Used for feedback on actions that don't involve a page reload or for reporting global system errors (e.g., a failed API call due to a network issue).
+Interaction Design:
+An <Alert /> component animates into view in a consistent location (e.g., the top-right corner of the viewport).
+It is color-coded and icon-coded based on its variant (success, error, warning).
+The alert is dismissible via a close button. Success and info alerts will also auto-dismiss after 5 seconds to reduce clutter. Error alerts will persist until manually closed.
+5.1.4. Dedicated Error Pages (404 & 500)
+Context: For handling navigation to a non-existent URL (404 Not Found) or a catastrophic server failure (500 Internal Server Error).
+Design: These are not generic server error pages. They are fully-branded pages adhering to the Digital Brand Identity Manual.
+404 Page: Displays a clear heading "Page Not Found," a user-friendly message "Sorry, we couldn't find the page you were looking for," and a prominent primary <Button /> labeled "Go to Dashboard."
+500 Page: Displays a heading "An Unexpected Error Occurred," a message "Our team has been notified of the issue. Please try again in a few moments," and a "Try Again" <Button />. It will also display a unique traceId to help support staff identify the specific error in the logs.
+5.2. Loading & Success States: Managing User Expectations
+A responsive system provides constant feedback. The user should never be left wondering if their action was received or if the system is working.
+5.2.1. Loading Indicators
+Button States: Any <Button /> that triggers a server-side action will immediately enter its isLoading state upon being clicked. This disables the button to prevent multiple submissions and displays an inline spinner, providing instant feedback that the request is in progress.
+Skeleton Screens: For initial page loads or when navigating to a data-heavy section (like the Audit Log Explorer), the system will display a "skeleton screen." This is a low-fidelity, static representation of the page's layout, which gives the impression of speed and manages user expectation by showing them what the structure of the page will be before the data has finished loading.
+5.2.2. Success Feedback
+Confirmation Messages: As detailed above, successful completion of any significant user action (e.g., withdrawing consent, submitting a grievance, publishing a notice) will be immediately confirmed with a green <Alert variant="success" /> notification.
+"Empty States" with Purpose: When a user's action results in an empty list, the design will avoid showing a blank, confusing space. Instead, it will display a helpful "empty state" message.
+Example: After a user resolves their last open grievance, the "Open Grievances" queue will display a large checkmark icon with the text, "All clear! You have no open grievances." Below this, a secondary <Button /> will offer a relevant next action, such as "View Resolved Tickets." This turns a dead end into a helpful and positive interaction.
+
+
+
+
+
+
+Definitive Master Outline: CMS UX, Accessibility & Component Design System
+Document Title: A User-Centric Design System for the DPDPA-Compliant CMS
+Preamble: This document defines the comprehensive User Experience (UX), Accessibility, and Component Design System for the Consent Management System. It is guided by the core tenet that legal compliance is best achieved through user clarity and empowerment. The framework ensures that the rights and obligations stipulated by the DPDPA and BRD are not hidden in complex interfaces but are presented to users in a manner that is intuitive, accessible, and instills trust. This document will govern the design of all user-facing interfaces.
+
+Part 1: Foundational Design Philosophy & Standards
+1.1. Core Philosophy: The "Data Principal First" Doctrine
+1.1.1. Mission Statement: To prioritize the Data Principal's rights, understanding, and ability to control their data in every design decision, reflecting the spirit of the DPDPA.
+1.1.2. The Six Pillars of User-Centric Design (Adapted from your draft):
+Radical Transparency: How the design will achieve "informed consent" through layered information and clarity.
+Empowerment through Control: How the design provides granular, meaningful choices.
+Effortless Agency: How the design will ensure "ease of withdrawal" is a reality.
+Efficiency & Simplicity: The commitment to reducing cognitive load and creating task-oriented workflows.
+Consistency & Predictability: The strategy for both internal and external consistency.
+Trust through Visual Reinforcement: How the UI will actively communicate security and privacy.
+1.2. Non-Negotiable Compliance with National Digital Standards
+1.2.1. The Accessibility Mandate: GIGW 3.0 (WCAG 2.1 AA)
+Formal declaration of WCAG 2.1 AA as the minimum standard.
+A detailed table mapping key WCAG principles (Perceivable, Operable, Understandable, Robust) to specific design commitments (e.g., keyboard navigation, ARIA attributes, color contrast).
+1.2.2. The Visual Mandate: Digital Brand Identity Manual 3.0
+Formal declaration of adherence.
+The Definitive Color Palette: A table explicitly listing the provided hex codes (--bg-color: #ffffff, --text-color: #212529, --accent-color: #1d5c9e, etc.) and their designated roles, including the mandatory functional colors for success, error, and warning states.
+The Definitive Typography System: Mandate for Noto Sans and a reference table for the type scale from the DBIM.
+The Definitive Iconography System: Mandate for Style 1: Line icons from the DBIM Toolkit.
+
+Part 2: The Core Component Library: A React Blueprint
+2.1. Introduction to the Atomic Design System
+Explanation of the methodology (Atoms -> Molecules -> Organisms).
+Technical stack: React with TypeScript, CSS Modules for styling.
+2.2. Atoms: The Fundamental Building Blocks
+(For each, provide a detailed table: Prop Name, Type, Required, Description. Include notes on states, accessibility, and styling from the DBIM.)
+<Button />: variant, isLoading, etc.
+<Icon />: iconName, size, etc.
+<ToggleSwitch />: label, checked, etc.
+<Badge />: variant, etc.
+<Link />: Standard vs. standalone.
+<Input />, <Label />, <Textarea />: The basic form elements.
+2.3. Molecules: Simple UI Assemblies
+(For each, describe its composition and purpose.)
+<FormField />: The core of all forms.
+<LanguageSelector />: The global language switcher.
+<Alert />: Toast/Snackbar notifications.
+<SearchInput />: A search field with an integrated search button/icon.
+<UserAvatar />: For profile menus.
+
+Part 3: Page & Workflow Blueprints
+This section provides detailed wireframes and user flow diagrams, showing how the components are assembled into coherent pages. It will be broken down by user portal.
+3.1. The Data Principal Portal Experience
+3.1.1. Login & Authentication Flow: Visual flowchart of the MeriPehchaan redirection.
+3.1.2. The Main Dashboard: Wireframe and component map.
+3.1.3. The "My Consents" Page: Wireframe showing the use of filters and <ConsentCard /> organisms.
+3.1.4. The Mandatory Consent Withdrawal Workflow: A detailed, step-by-step series of mockups showing the confirmation modal and its consequences.
+3.1.5. The Grievance Submission & Tracking Flow: Wireframes for the submission form and the ticket tracking list.
+3.2. The Data Fiduciary Portal Experience
+3.2.1. The Role-Based Dashboard: Example wireframes for a "DPO View" vs. a "Grievance Handler View."
+3.2.2. The "Purpose as a Contract" Creation Workflow: A multi-step wireframe showing a DPO defining a purpose and its associated internalMetadata.
+3.2.3. The Notice Publishing Workflow: Wireframes illustrating the draft -> translation status -> publish flow.
+3.2.4. The Audit Log Explorer: Wireframe of the powerful data table with its advanced filtering controls.
+3.3. The Consent Collection & Cookie Management Experience
+3.3.1. The <ConsentForm /> Organism: A detailed breakdown of this critical, reusable component.
+3.3.2. Cookie Consent Banner: A mockup of a DBIM-compliant banner, with clear "Accept All," "Accept Essential," and "Customize" buttons.
+3.3.3. Cookie Preference Center: A wireframe showing the granular, category-based toggles.
+
+Part 4: UX for System States & Feedback
+4.1. Error Handling UX (Adapted from your draft)
+Principles: Be clear, specific, constructive, and visually distinct.
+Patterns: Detailed descriptions and mockups for:
+Inline Validation Errors (on <FormField />).
+Form-Level Summary Errors.
+Global <Alert /> Notifications.
+404 and 500 Error Pages (fully designed as per DBIM).
+4.2. Loading & Success States
+Loading Indicators: Use of spinners in <Button />s, skeleton screens for page content.
+Success Feedback: Use of green <Alert /> notifications to confirm actions.
+"Empty States": Mockups for what a user sees when a list (e.g., "My Grievances") is empty, with helpful text and a clear call to action.

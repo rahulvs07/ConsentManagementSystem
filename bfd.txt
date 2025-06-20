@@ -1,0 +1,704 @@
+==Start of OCR for page 1==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+Business Requirement Document
+For
+Consent Management
+Under the DPDP Act, 2023
+==End of OCR for page 1==
+==Start of OCR for page 2==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+Contents
+1 Introduction .................................................................................................................... 3
+2 Objectives ........................................................................................................................ 3
+3 Key Stakeholder and Responsibilities ............................................................................... 3
+4 Functional Requirements .................................................................................................. 4
+4.1 Consent Management Lifecycle.............................................................................. 4
+4.1.1 Consent Collection........................................................................................ 4
+4.1.2 Consent Validation........................................................................................ 9
+4.1.3 Consent Update .......................................................................................... 11
+4.1.4 Consent Renewal ........................................................................................ 14
+4.1.5 Consent Withdrawal.................................................................................... 17
+4.2 Cookie Consent .................................................................................................... 22
+4.3 User Dashboard .................................................................................................... 25
+4.3.1 View Consent History.................................................................................... 25
+4.3.2 Modify or Revoke Consent............................................................................ 25
+4.3.3 Raise Grievances or Data Requests ................................................................. 26
+4.4 Consent Notifications ........................................................................................... 27
+4.4.1 User Notifications ........................................................................................ 27
+4.4.2 Data Fiduciary and Processor Alerts................................................................ 28
+4.5 Grievance Redressal Mechanism ........................................................................... 29
+4.5.1 Complaint Logging ....................................................................................... 29
+4.5.2 Resolution Tracking...................................................................................... 30
+4.6 System Administration.......................................................................................... 32
+4.6.1 User Role Management................................................................................ 32
+4.6.2 Data Retention Policy Configuration............................................................... 33
+4.7 Logging ................................................................................................................ 33
+4.7.1 Audit Logs .................................................................................................. 34
+==End of OCR for page 2==
+==Start of OCR for page 3==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+อ
+Digital India
+Power To Empower
+1 Introduction
+The Business Requirements Document (BRD) for the Consent Management System
+(CMS) outlines the objectives and functionalities of the platform designed to align with
+the Digital Personal Data Protection (DPDP) Act. As personal data protection becomes
+increasingly critical, organizations face growing challenges in managing consents
+transparently and effectively while maintaining regulatory compliance. The CMS
+addresses these challenges by enabling seamless consent management across its
+lifecycle, including collection, validation, updates, withdrawal and audit readiness.
+This document serves as a guideline for the development and deployment of a system
+that empowers Data Principals to exercise their rights over their personal data. It
+provides Data Fiduciaries and Processors with the necessary tools and integrations to
+process consents securely and in compliance with the legal framework.
+The BRD defines the CMS's functional requirements. It includes a detailed breakdown of
+core modules such as Consent Lifecycle Management, User Dashboard, Notifications
+and Grievance Redressal Mechanisms. Additionally, the document outlines
+administrative capabilities, including user role management and data retention policy
+configuration, to ensure operational efficiency and compliance.
+2 Objectives
+The objective of the Consent Management System is to:
+• Enable Comprehensive Consent Lifecycle Management: Facilitate the full
+lifecycle of consent, including collection, validation, modification, renewal and
+withdrawal, in alignment with the requirements of the DPDP Act and its rules.
+• Empower Data Principals: Provide a user-centric platform where individuals can
+view, manage and control their consent preferences and exercise their data rights,
+ensuring transparency and trust.
+• Ensure Compliance with DPDP Act and Rules: Design the system to adhere
+strictly to the DPDP Act's regulations, including purpose limitation, data
+minimization and secure processing of personal data.
+3 Key Stakeholder and Responsibilities
+The stakeholders include Data Principals, Data Fiduciaries, Data Processors and Consent
+Managements, each playing a critical role in ensuring compliance with the DPDP Act
+and Rules.
+Key Words	Definition
+Data Principal	An individual to whom the personal data relates. They have the right to give, manage and withdraw consent for data processing.
+Data Fiduciary	Any person or entity that determines the purpose and means of
+==End of OCR for page 3==	
+==Start of OCR for page 4==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | processing personal data and is responsible for obtaining and managing consent in compliance with the DPDP Act. |
+| :--- | :--- |
+| Data Processor | A person or entity that processes personal data on behalf of a Data Fiduciary, following their instructions. |
+| Data Protection Officer | DPO acts as the primary compliance authority to oversee adherence to the DPDP Act |
+4 Functional Requirements
+Diagram Description: A central hexagon labeled "Consent Management" is surrounded by six other hexagons connected by lines, representing the core components:
+Consent Collection
+Storing Consent
+Managing Consent (View, modify or withdraw)
+Consent Renewal
+Audit Logs
+Consent Validation
+4.1 Consent Management Lifecycle
+The consent management lifecycle consist of
+i. Consent collection.
+ii. Consent validation.
+iii. Consent Update.
+iv. Consent Renewal.
+v. Consent Withdrawal
+4.1.1 Consent Collection
+Primary Usage	To enable Data Fiduciaries to explicitly collect, purpose-specific and lawful consent from Data Principles for processing their personal data in compliance with the DPDP Act.
+==End of OCR for page 4==	
+==Start of OCR for page 5==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | |
+| :--- | :--- |
+| Actors | Data Principal: The individual providing or declining consent for their data to be processed.<br>Data Fiduciary (DF): Organization requesting and using the consent for defined purposes.<br>Consent Management (CMS): Manages the consent lifecycle, including collection, validation, updates, renewals and withdrawals. |
+| Pre-Conditions | • The CMS is configured to display consent notices specific to these purposes.<br>• The Data Principal is interacting with a Data Fiduciary's service or platform. |
+| Trigger | The Data Principle initiates a service request (e.g., registration, service onboarding) that requires their personal data to be collected or processed. |
+| Functional Requirements | User-Friendly Interface:<br>• The consent collection interface must be accessible and intuitive, ensuring users understand the terms of data processing.<br>• Support WCAG-compliant designs for users with disabilities.<br>Purpose-Specific Consent:<br>• Users must provide consent for each distinct purpose (e.g., account creation, marketing, analytics).<br>• The system must prevent "bundled consent" by separating optional purposes from mandatory ones.<br>Granular Consent: Allow users to provide or withhold consent for each purpose separately.<br>Explicit and Affirmative Action:<br>• Require users to take a clear, affirmative action to provide consent (e.g., clicking "I Agree," ticking a checkbox).<br>• Default settings must not pre-check consent options.<br>Multi-Language Support: Enable consent notices in English and languages as listed in the Eighth Schedule of the Constitution of India.<br>Consent Metadata Logging:<br>• User ID<br>• Timestamp<br>• Purpose ID(s)<br>• Consent status (granted or denied)<br>• Language preference |
+| Workflow (Indicative) |
+Step	Trigger/Action	Description
+Initiation	Trigger: Data Principal interacts with the Data Fiduciary's platform (e.g.,	The system identifies activities requiring consent (e.g., account creation, marketing).
+==End of OCR for page 5==		
+==Start of OCR for page 6==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | registration or service request). | |
+| | Action: CMS generates a tailored consent request for the specific purpose(s). | Purpose categories are mapped to consent requirements. |
+| Consent Notice Presentation | Trigger: User accesses a page, app or interface where personal data collection is requested. | Display a clear and concise consent notice as per DPDP Act, covering:<br>• Purpose(s) of data collection and processing.<br>• Data being collected.<br>• User rights under the DPDP Act.<br>• Data retention and withdrawal policies. |
+| | Action: Notice is available in English and in the languages as listed in the Eighth Schedule of the Constitution of India. | |
+| Consent Options | Trigger: User is prompted to select consent preferences. | Provide explicit options (e.g., checkboxes or toggles) for granular consent for each purpose. Example: Separate checkboxes for marketing emails, analytics, or third-party sharing. |
+| Consent Submission | Trigger: User submits their preferences by interacting with the consent options. | User confirms consent by clicking a button (e.g., "I Agree" or "Submit Consent"). |
+| | Action: CMS validates the consent. Where applicable, Parent/guardian identity and certificates should | • Free, specific, informed, unambiguous and explicit and affirmatively expressed.<br>• Limited to the stated purposes. |
+==End of OCR for page 6==
+==Start of OCR for page 7==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | be verified (through existing a/c or DigiLocker) | |
+| :--- | :--- | :--- |
+| Consent Artifact Creation | Trigger: Consent submission is validated successfully. | • The CMS generates a Consent Artifact containing Purpose(s) of consent, Metadata (e.g., timestamp, user ID, session ID, consent method).<br>• The Consent Artifact is securely stored in the Consent Database. |
+| Acknowledgment | Trigger: Consent is successfully recorded. | Notify the user of successful consent submission via email, SMS, or app notification. |
+| Real-Time Synchronization | Trigger: Consent artifact is stored. | • Consent status is synchronized across internal systems and third-party processors in real time.<br>• Data Fiduciaries receive updates via APIs to validate user consent before data processing. |
+| Post-Submission Validation | Trigger: User data is processed based on consent. | Fiduciaries query CMS APIs to verify consent status before initiating processing workflows. |
+| Monitoring and Logging | Trigger: Consent collection is completed. | All actions are logged in an audit trail for regulatory compliance. |
+| Assumptions | • The Data Fiduciary has accurately mapped all data collection activities to their respective purposes.<br>• The DF is compliant with DPDP Act regulations, including multi-language support and accessibility standards.<br>• The Data Principal has access to the consent interface (e.g., web or mobile app). |
+| Business Rule | • Purpose-Specific Consent: Consent must be collected for specific purposes, not as a blanket agreement.<br>• Explicit Action: The Data Principal must take an affirmative action (e.g., clicking "I Agree”) to provide consent.<br>• Revocability: Consent must be revocable by the Data Principal at any time.<br>• Transparency: The consent notice must include clear information about data use, retention, rights and grievance redressal mechanisms.<br>• Granular Consent: The Data Principal must be able to consent or decline for each individual purpose independently. |
+==End of OCR for page 7==
+==Start of OCR for page 8==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+Indicative Flow
+Use case 1: Consent Collection Flow - DPDP Act Compliance
+This is a sequence diagram describing the interaction between Data Principal, Data Fiduciary, Consent Manager (CMS), Consent Database, and Audit Logs.
+Data Principal interacts with the Data Fiduciary's platform (e.g., registration).
+Data Fiduciary identifies activities requiring consent and sends a request to the Consent Manager (CMS). The CMS is pre-configured to display purpose-specific consent notices.
+CMS generates a tailored consent request and displays a multi-language, purpose-specific consent notice to the Data Principal. The notice includes purpose, data collected, user rights, and retention/withdrawal policies.
+Data Principal selects granular consent preferences and submits them (e.g., by clicking "I Agree").
+CMS validates the consent preferences and the details of the consent. Validation ensures consent is free, specific, informed, and includes parent/guardian verification where needed.
+CMS creates a Consent Artifact.
+CMS stores the artifact securely in the Consent Database.
+CMS notifies the Data Principal of the successful submission via email/SMS/app.
+CMS updates the consent status via APIs to the Data Fiduciary.
+CMS synchronizes the consent status in real-time.
+Data Fiduciary queries CMS APIs to verify consent before processing data.
+CMS validates the consent before the Data Fiduciary initiates processing.
+CMS logs all actions in the Audit Logs for compliance and records an audit trail.
+Use Case 2: Account Aggregator (AA) Framework
+This is a block diagram showing the flow of data facilitated by an Account Aggregator.
+User (Data Owner) registers and links their financial accounts with the Account Aggregator (AA).
+A Financial Information User (FIU - Bank/NBFC) requests the User's financial data via the AA.
+The AA seeks consent from the User for data sharing.
+The User grants consent.
+The AA fetches the financial data from the Financial Information Provider (FIP - Bank, Insurance, etc.).
+The FIP sends the encrypted data to the AA.
+The AA shares the encrypted data with the FIU.
+The FIU provides a service (e.g., loan, investment advice) to the User.
+Key principles highlighted: The User retains control over data sharing. The AA does not store data, it only facilitates the secure transfer.
+==End of OCR for page 8==
+==Start of OCR for page 9==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+4.1.2 Consent Validation
+Primary Usage	To validate whether the Data Principal has provided explicit and lawful consent for a specific purpose before the Data Fiduciary processes their personal data.
+Actors	Data Principal: The user whose consent needs to be validated.<br>Data Fiduciary (DF): The organization that requests consent validation before processing data.<br>Consent Management System (CMS): The system responsible for managing and validating user consents.
+Pre-Conditions	The Data Principal has provided consent, which is stored securely as a Consent Artifact.
+Trigger	• A Data Fiduciary initiates a data processing activity (e.g., marketing, analytics, or service delivery) that requires user consent validation.<br>• A system event or API call from the Data Fiduciary requests confirmation of consent status.
+Functional Requirements	Pre-Processing Check: Before initiating data processing, validate whether -<br>• The consent exists for the given User ID and Purpose ID.<br>• The consent is still active and not expired or withdrawn.<br>Metadata Validation: Verify the following metadata -<br>• User ID<br>• Purpose ID<br>• Timestamp of consent<br>• Status of consent (granted/withdrawn/expired)<br>Scope Validation:<br>• Ensure that the processing request does not exceed the purpose specified in the consent.<br>• Example: Data collected for "identity verification" cannot be used for "marketing" unless explicitly consented to.<br>Purpose-Specific Validation<br>• Match the requested processing activity with the purpose(s) consented to by the user.<br>• Reject requests that do not align with specific purposes.
+Workflow (Indicative)	
+Step	Actors	Description
+Initiation of Validation Request	Data Fiduciary	A request for consent validation is triggered by the Data Fiduciary before initiating any data processing (e.g., marketing email, analytics).
+==End of OCR for page 9==		
+==Start of OCR for page 10==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| API Request to CMS | Data Fiduciary | • The Data Fiduciary sends an API request to the CMS specifying: User ID or Session ID.<br>• Purpose for which consent validation is required. |
+| :--- | :--- | :--- |
+| Consent Lookup | CMS | The CMS searches its database for an active consent artifact corresponding to the specified user ID and purpose. |
+| Validation of Consent Artifact | CMS | Validate the following criteria:<br>• Purpose alignment: Verify that consent is specific to the requested purpose.<br>• Timestamp validity: Check if consent is still active or has expired.<br>• Status: Ensure the consent has not been withdrawn. |
+| Validation Response | CMS<br>Data Fiduciary | The CMS sends a real-time response back to the Data Fiduciary with one of the following outcomes:<br>• Valid: Consent exists, is active and aligns with the requested purpose.<br>• Invalid: No active consent exists, or the consent is withdrawn/expired. |
+| Consent-Based Processing | Data Fiduciary | • If consent is valid: Data Fiduciary proceeds with the requested data processing activity.<br>• If consent is invalid: The processing request is denied and the user is notified. |
+| Audit Logging | CMS<br>Data Fiduciary | All validation actions, whether successful or unsuccessful, are logged in the CM's immutable audit logs for regulatory compliance. |
+| Assumptions | • Consent artifacts in the CMS are immutable and tamper-proof.<br>• The Data Fiduciary has integrated their system with the CMS API for consent validation.<br>• Consent validation is performed in real time to avoid delays in data processing workflows. |
+| Business Rule | • Purpose-Specific Validation: Consent must be validated for the exact purpose for which data is being processed.<br>• Timestamp Validation: Consent must be checked for expiration or withdrawal before data processing.<br>• Data Minimization: Consent validation ensures that only data for |
+==End of OCR for page 10==
+==Start of OCR for page 11==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | • which explicit consent is given is processed.<br>• Auditable Results: All consent validation actions must be logged in the CMS for compliance and reporting purposes.<br>• Error Handling: If valid consent does not exist, the CMS must return an error or deny the processing request and the user must be notified accordingly. |
+| :--- | :--- |
+Indicative Flow:
+This is a sequence diagram showing the consent validation process between a Data Fiduciary and a Consent Management System (CMS).
+Data Fiduciary sends an "Initiate Consent Validation Request" to the Consent Management System, including the User ID/Session ID and the Purpose.
+CMS performs a "Lookup Consent Artifact" in the CMS Database.
+CMS Database returns the "Consent Data" to the CMS.
+CMS validates the data based on: Purpose Alignment, Timestamp Validity, and Consent Status.
+An alt (alternative) block shows two paths:
+[Valid Consent]: CMS sends a "Valid Response" to the Data Fiduciary. The Data Fiduciary then proceeds with "Process Data".
+[Invalid Consent]: CMS sends an "Invalid Response" to the Data Fiduciary. The Data Fiduciary will "Deny Processing & Notify User".
+A par (parallel) block shows that logging happens concurrently. The system sends a "Log Validation Request" and "Log Processing Decision" to the Audit Logs.
+4.1.3 Consent Update
+Primary Usage	To enable Data Principals to modify their previously granted consent for specific purposes or activities while ensuring compliance with the DPDP Act.
+Actors	Data Principal: The individual who updates their consent.<br>Data Fiduciary (DF): The entity requesting the updated consent.<br>Consent Management System (CMS): Manages consent updates and tracks actions.
+Pre-Conditions	• The Data Principal has previously provided consent for a specific purpose.<br>• The existing consent is valid.<br>• CMS maintains detailed consent artifacts, including metadata.
+==End of OCR for page 11==	
+==Start of OCR for page 12==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | |
+| :--- | :--- |
+| Trigger | • Data Principal logs into the CMS dashboard and selects update consent<br>• The Data Fiduciary introduces a new processing purpose or modifies an existing one that requires user approval. |
+| Functional Requirements | Notification of Consent Updates: Notify users when the scope or purpose of processing changes, or when additional purposes are added. Notifications must clearly explain -<br>• The new purpose or scope.<br>• How it affects their data processing.<br>• The need for updated consent.<br><br>Granular Consent Updates: Allow users to update their consent for specific purposes while maintaining previously granted consents for others.<br><br>Simplified User Action: Ensure that updating consent is as simple and intuitive as the initial consent process.<br><br>Metadata Logging: Record metadata for all updates, including<br>• User ID<br>• Timestamp<br>• Updated purpose IDs<br>• Status (e.g., active, pending) |
+| Workflow (Indicative) |
+Description	Actors	Key Actions
+Initiation of Consent Update	Data Principal	The user logs into the CMS dashboard and selects consent to update.
+Display Current Consent Details	CMS	The CMS displays all active consents with their purposes, expiration dates and metadata.
+User Modifies Consent	Data Principal	The user modifies preferences for specific purposes.
+Validation of Changes	DF	DF validates the updates for Purpose alignment.
+Consent Artifact Update	CMS	The CMS updates the consent artifact with new preferences and generates a timestamp.
+Notification of Changes	CMS	• Notify the user of successful updates.<br>• Alert Data Fiduciaries of updated consent statuses.
+Real-Time Sync with Data Fiduciaries	CMS	Sync updated consent data with all relevant systems, ensuring no processing occurs without updated consent.
+==End of OCR for page 12==		
+==Start of OCR for page 13==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Audit Logging | CMS | Log all changes in audit logs for compliance. |
+| :--- | :--- | :--- |
+| Assumptions | • DF is integrated with all systems that rely on the consent data.<br>• The Data Principal receives timely notifications for consent updates.<br>• The system supports granular consent, allowing the user to modify specific purposes independently. |
+| Business Rule | Transparency: Updated consent must include a clear explanation of the changes (e.g., new data purposes or retention policies).<br><br>User Action Required: Consent cannot be assumed. The Data Principal must actively agree to the update.<br><br>Auditability: All consent updates must be logged, including the metadata (e.g., timestamp, purpose, user ID).<br><br>Validity: Updated consent must specify the duration for which it remains valid.<br><br>Notifications: Notify all stakeholders (Data Fiduciaries and Data Processors) of updated consent status immediately. |
+==End of OCR for page 13==
+==Start of OCR for page 14==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+Indicative Flow:
+This is a sequence diagram for the Consent Update process, involving the Data Principal, Consent Management System, Data Fiduciary, and Audit Logs.
+Data Principal logs into the dashboard, selects "Consent to Update," and the Consent Management System (CMS) displays current consent details (active consents, purposes, expiration dates).
+Data Principal modifies their consent preferences.
+CMS sends a "Request Validation of Updates" to the Data Fiduciary.
+Data Fiduciary performs "Validate Purpose Alignment".
+An alt (alternative) block shows two paths:
+[Valid Updates]:
+The Data Fiduciary confirms "Validation Successful" to the CMS.
+CMS updates the consent artifact and generates a new timestamp.
+A par (parallel) block for "Notifications and Sync" starts: CMS alerts the updated status to the Data Fiduciary and performs a real-time sync. It also notifies the Data Principal of success.
+CMS logs the consent updates and associated metadata (timestamp, purpose, user ID) in the Audit Logs.
+[Invalid Updates]:
+The Data Fiduciary reports "Validation Failed" to the CMS.
+CMS notifies the Data Principal of the failure and logs the failed update attempt in the Audit Logs.
+The diagram notes that "Business Rules Applied" include: explicit user action, clear explanation of changes, immediate stakeholder notification, and audit trail maintenance.
+4.1.4 Consent Renewal
+Primary Usage	To enable Data Principals to renew their previously granted consent for specific purposes or activities while ensuring compliance with the DPDP Act.
+Actors	Data Principal: The individual who renews their consent.<br>Data Fiduciary (DF): The entity requesting the renewed consent.<br>Consent Management System (CMS): Manages and tracks renewal actions.
+Pre-Conditions	• The Data Principal has previously provided consent for a specific purpose.
+==End of OCR for page 14==	
+==Start of OCR for page 15==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | • The existing consent is expired or nearing expiration.<br>• CMS maintains detailed consent artifacts, including metadata. |
+| :--- | :--- |
+| Trigger | The consent is set to expire and the system notifies the Data Principal to renew their consent. |
+| Functional Requirements | Time-Limited Consents:<br>• For consents with predefined expiration dates, provide renewal options prior to expiration.<br>• Example: Notify the user 30 days before consent expiry and provide a seamless renewal process.<br><br>Simplified User Action: Ensure that renewing consent is as simple and intuitive as the initial consent process.<br><br>Metadata Logging: Record metadata for all renewals, including<br>• User ID<br>• Timestamp<br>• Renewed purpose IDs<br>• Status (e.g., active, pending) |
+| Workflow (Indicative) |
+Description	Actors	Key Actions
+Initiation of Consent Renewal	Data Principal	The user logs into the CMS dashboard and selects consent to renew.
+Display Current Consent Details	CMS	The CMS displays all active consents with their purposes, expiration dates and metadata.
+User Renews Consent	Data Principal	The user confirms renewal for expiring consents.
+Validation of Changes	DF	DF validates the updates for Purpose alignment.
+Consent Artifact Update	CMS	The CMS updates the consent artifact with new preferences and generates a timestamp.
+Notification of Changes	CMS	• Notify the user of successful renewals.<br>• Alert Data Fiduciaries of updated consent statuses.
+Real-Time Sync with Data Fiduciaries	DF	Sync updated consent data with all relevant systems, ensuring no processing occurs without updated consent.
+==End of OCR for page 15==		
+==Start of OCR for page 16==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Audit Logging | CMS | Log all changes in audit logs for compliance. |
+| :--- | :--- | :--- |
+| Assumptions | • CMS is integrated with all systems that rely on the consent data.<br>• The Data Principal receives timely notifications for consent renewal requirements.<br>• The system supports granular consent, allowing the user to renew specific purposes independently. |
+| Business Rule | Transparency: Renewed consent must include a clear explanation of the changes (e.g., retention policies).<br><br>User Action Required: Consent cannot be assumed. The Data Principal must actively agree to the renewal.<br><br>Auditability: All consent renewals must be logged, including the metadata (e.g., timestamp, purpose, user ID).<br><br>Validity: Renewed consent must specify the duration for which it remains valid.<br><br>Notifications: Notify all stakeholders (Data Fiduciaries and Data Processors) of renewed consent status immediately. |
+Indicative Flow:
+==End of OCR for page 16==
+==Start of OCR for page 17==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+This is a sequence diagram for the Consent Renewal process, involving the Data Principal, Consent Management System, Data Fiduciary, and Audit Logs.
+The Consent Management System (CMS) monitors consent expiration and sends a renewal notification to the Data Principal (e.g., 30 days before expiration).
+Data Principal logs into the dashboard, selects "Consent to Renew," and the CMS displays current consent details (expiring consents, purposes, dates).
+Data Principal confirms the consent renewal.
+CMS sends a "Request Validation" to the Data Fiduciary.
+Data Fiduciary performs "Validate Purpose Alignment".
+An alt (alternative) block shows two paths:
+[Valid Renewal]:
+The Data Fiduciary confirms "Validation Successful" to the CMS.
+CMS updates the consent artifact, generating a new expiration date and timestamp.
+A par (parallel) block for "Notifications and Sync" starts: CMS alerts the renewed status to the Data Fiduciary and performs a real-time system sync. It also notifies the Data Principal of the successful renewal.
+CMS logs the renewal and associated metadata (User ID, Timestamp, Purpose IDs, New Status) in the Audit Logs.
+[Invalid Renewal]:
+The Data Fiduciary reports "Validation Failed" to the CMS.
+CMS notifies the Data Principal of the failure and logs the failed renewal attempt in the Audit Logs.
+The diagram notes that "Business Rules Enforced" include: explicit renewal action required, clear validity period, immediate stakeholder notification, and complete audit trail.
+4.1.5 Consent Withdrawal
+Primary Usage	To allow Data Principals to withdraw previously provided consent for one or more specific purposes, ensuring immediate cessation of related data
+==End of OCR for page 17==	
+==Start of OCR for page 18==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | processing. |
+| :--- | :--- |
+| Actors | Data Principal: The individual initiating consent withdrawal.<br>Data Fiduciary (DF): The organization receiving the withdrawal notification and stopping related data processing.<br>Consent Management System (CMS): Facilitates the withdrawal process and notifies stakeholders. |
+| Pre-Conditions | • The Data Principal has previously provided consent for a specific purpose.<br>• The consent is currently valid (not expired or previously withdrawn).<br>• The CMS maintains a secure record of all consent artifacts. |
+| Trigger | • The Data Principal initiates a withdrawal request via a user interface (e.g., dashboard, mobile app, or customer portal).<br>• A withdrawal request is received through an API from an integrated application. |
+| Functional Requirements | Ease of Withdrawal:<br>- Users must be able to withdraw consent through User dashboard.<br>- Ensure the process is as simple as the original consent-giving mechanism<br><br>Real-Time Processing: Upon withdrawal -<br>• Stop all processing activities related to the withdrawn purpose.<br>• Update internal records to reflect the withdrawal status.<br>• Notify downstream systems and third-party processors to cease processing.<br><br>Confirmation to the User: Notify the user immediately upon successful withdrawal with:<br>• Confirmation message.<br>• Information on implications (e.g., loss of specific features or services).<br><br>Metadata Logging: Log withdrawal metadata, including:<br>• User ID<br>• Purpose ID<br>• Timestamp of withdrawal<br>• Status updates (e.g., confirmation of processing halt)<br><br>Processing Exceptions: Allow continued processing if required or authorized under law (e.g., compliance with regulatory mandates) |
+| Workflow (Indicative) |
+Description	Actors	Key Actions
+==End of OCR for page 18==		
+==Start of OCR for page 19==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Initiation of Withdrawal Request | Data Principal | User logs into a consent dashboard or portal (web/mobile) and selects the option to withdraw consent. |
+| :--- | :--- | :--- |
+| Presentation of Current Consent Details | CMS | • Display a list of all active consents, grouped by purpose and date, for the user to review.<br>• Include metadata such as the purpose, consent timestamp and associated services. |
+| Selection of Consent to Withdraw | Data Principal | The user selects the specific purpose(s) or activities for which they wish to revoke consent. |
+| Confirmation of Withdrawal Action | Data Principal | • Provide the user with a summary of the implications of withdrawing consent (e.g., loss of certain services or features).<br>• The user confirms withdrawal by interacting with the interface (e.g., clicking "Withdraw Consent"). |
+| Validation | CMS | Validate the withdrawal request to ensure: The selected purpose(s) have active consent. |
+| Consent Artifact Update | CMS | • Update the consent record to reflect the withdrawal.<br>• Mark the associated Consent Artifact as "Withdrawn" with a timestamp and log the action in the audit trail. |
+| Notification to Data Fiduciaries and Processors | CMS | • Notify all linked Data Fiduciaries and third-party processors about the withdrawal request.<br>• Include details of the affected purposes and associated user data. |
+| Immediate Cessation of Data Processing | Data Fiduciary | • Halt all processing activities related to the withdrawn consent.<br>• Stop sharing, processing, or analysing any associated data. |
+| Acknowledgement | CMS | Send a notification (via email/SMS) to the |
+==End of OCR for page 19==
+==Start of OCR for page 20==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| nt to Data Principal | | Data Principal confirming successful consent withdrawal. |
+| :--- | :--- | :--- |
+| Audit and Compliance Logging | CMS | • Record the withdrawal event, including metadata such as the timestamp, purpose and user ID, in an immutable audit log.<br>• Generate compliance reports if required. |
+| Assumptions | • The withdrawal process is simple, user-friendly and mirrors the ease of giving consent.<br>• Data Fiduciaries and third-party processors are configured to immediately cease processing activities upon withdrawal notification.<br>• The CMS is accessible to both Data Fiduciaries and Data Principals for real-time withdrawal updates. |
+| Business Rule | Purpose-Specific Withdrawal: Data Principals must be able to withdraw consent for specific purposes without affecting others.<br><br>Immediate Effect: Withdrawal of consent must immediately halt all associated data processing activities.<br><br>Notifications: Both the Data Fiduciary and Data Principal must be notified of the withdrawal action.<br><br>Auditability: The withdrawal request, metadata and response must be logged in an immutable format for compliance and future audits.<br><br>Legal Exceptions: Withdrawal does not apply where data processing is required by law or exempted under the DPDP Act. |
+Indicative Flow:
+Use Case 1:
+==End of OCR for page 20==
+==Start of OCR for page 21==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+This is a sequence diagram for Consent Withdrawal, involving the Data Principal, Consent Management System, Data Fiduciary, Third-Party Processors, and Audit Logs.
+Data Principal logs into the dashboard.
+Consent Management System (CMS) displays active consents (purposes, timestamps, services).
+Data Principal selects consent(s) to withdraw and the CMS shows withdrawal implications/impact on services.
+Data Principal confirms the withdrawal.
+CMS validates the withdrawal request by checking the active consent status.
+An alt (alternative) block shows two main paths:
+[Valid Withdrawal]:
+CMS updates the consent artifact, marking it as "Withdrawn".
+A par (parallel) block for "Notifications and Processing Cessation" begins:
+CMS notifies the Data Fiduciary of the withdrawal.
+Data Fiduciary notifies Third-Party Processors.
+Third-Party Processors halt processing.
+Data Fiduciary halts its own processing.
+CMS sends a confirmation to the Data Principal.
+CMS logs the withdrawal in the Audit Logs, recording metadata (User ID, Purpose ID, Timestamp, Status updates).
+[Invalid Withdrawal]:
+CMS logs the failed attempt and notifies the Data Principal of the invalid request.
+A final alt (alternative) block shows a legal exception:
+[Legal Exception Applies]: Even after withdrawal, processing may continue if required by law. This is logged as an exception in the Audit Logs.
+The diagram notes that "Business Rules Applied" include: purpose-specific withdrawal, immediate effect, complete audit trail, and legal compliance.
+Use Case 2:
+==End of OCR for page 21==
+==Start of OCR for page 22==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+This is a sequence diagram for consent revocation in the Account Aggregator framework, involving the User, Account Aggregator, Financial Information User, and Financial Information Provider.
+User logs into the Account Aggregator (AA) platform.
+AA displays active consents.
+User selects a consent to revoke and confirms the action.
+AA sends a POST /Consent/revoke message to the Financial Information User (FIU).
+FIU notifies the AA of the consent revocation.
+AA acknowledges the revocation.
+AA sends a revocation confirmation to the User.
+The data sharing stops immediately.
+4.2 Cookie Consent
+The purpose of cookie consent management is to ensure that users (Data Principals) are
+informed about cookies and tracking technologies used on websites and applications,
+providing them with the ability to grant, modify, or withdraw consent for their use.
+Features
+Granular Consent Options: Allow users to consent to specific categories of
+cookies, such as essential, performance, analytics, and marketing cookies.
+Real-Time Updates: Enable users to modify or revoke cookie consent through a
+dedicated cookie preferences interface.
+Cookie Policy Display: Provide a clear and accessible cookie policy outlining
+cookie usage, purposes and data sharing practices.
+Multi-Language Support: Ensure cookie notices are available in languages,
+supporting inclusivity.
+Auto-Expiry: Set expiration periods for user preferences and cookies,
+complying with data retention policies.
+Functional Requirements
+Requirement	Description
+Cookie Notice Banner	Display a banner informing users of cookie usage when they first visit the website or app.
+Granular Control Interface	Provide a user-friendly interface where users can customize their cookie preferences.
+Consent Logging	Maintain detailed logs of cookie consents, including timestamps, consent categories and user actions.
+Default Settings	Enable only essential cookies by default until explicit consent is obtained for others.
+==End of OCR for page 22==	
+==Start of OCR for page 23==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Requirement | Description |
+| :--- | :--- |
+| Notification of Changes | Notify users of changes to cookie policies and request renewed consent. |
+Workflow (Indicative)
+Cookie Banner Display: The website displays a cookie banner on the first user
+visit.
+User Interaction: The user selects cookie preferences (accept all, decline all, or
+customize).
+Consent Validation: The system validates the preferences and activates cookies
+accordingly.
+Consent Logging: The system logs the preferences with a timestamp for
+auditing.
+Preference Updates: Users can access the cookie preferences interface to modify
+or withdraw consent.
+Indicative Flow:
+==End of OCR for page 23==
+==Start of OCR for page 24==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+This is a sequence diagram for Cookie Consent, involving the User, Website, Cookie Management System, and Audit Logs.
+First Visit:
+The Website detects a first visit and displays a cookie banner, showing cookie categories and policy.
+An alt (alternative) block shows the User's choices:
+[Accept All]: User clicks "Accept All". The Website enables all cookie categories via the Cookie Management System (CMS).
+[Decline All]: User clicks "Decline All". The Website enables only essential cookies via the CMS.
+[Customize]: User clicks "Customize". The Website shows a preference interface with granular controls. The User sets custom preferences and the Website applies them via the CMS.
+A par (parallel) block shows that after the choice is made and cookies are activated, the CMS logs the consent details (Timestamp, Selected Categories, User Action) to the Audit Logs. The Website then displays a confirmation to the User.
+Later Visit/Update:
+The User accesses cookie settings. The Website shows the current preferences.
+An alt block for [Modify Preferences] shows the update flow:
+The User updates their settings and confirms the updates.
+The Website sends the new configuration to the CMS.
+The CMS logs the preference change in the Audit Logs.
+The flow also shows checks for Auto-Expiry (requesting renewal if expired) and Policy Changes (notifying of updates and requesting renewed consent).
+==End of OCR for page 24==
+==Start of OCR for page 25==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+4.3 User Dashboard
+4.3.1 View Consent History
+The dashboard will allow users to view the history of all consent-related actions
+performed.
+Field	Details
+Purpose	Provide Data Principals with a detailed log of all consent-related activities including cookies, ensuring transparency and accountability.
+Features	• List all active, expired and withdrawn consents.<br>• Metadata display (e.g., timestamp, purpose, consent status).<br>• Search and filter options for easier navigation.
+Functional Requirements	• Consent Log Display: Show the complete consent history grouped by status (Active, Expired, Withdrawn).<br>• Search & Filter: Enable users to search for consents by purpose, date or status.<br>• Export Options: Allow users to download their consent history in a secure format (e.g., PDF, CSV).
+Workflow	• User logs in to the dashboard.<br>• Selects "View Consent History."<br>• The system retrieves the consent history.<br>• Displays categorized data with search and filter options.
+4.3.2 Modify or Revoke Consent
+Field	Details
+Purpose	Empower Data Principals to modify or revoke their consent for specific purposes in real time including cookie consent.
+Features	• Modify granular preferences for specific purposes.<br>• Revoke consent with immediate effect.<br>• Receive acknowledgment of actions.
+Functional Requirements	• Granular Modification: Allow updates for individual purposes without affecting other consents.<br>• Immediate Revocation: Halt data processing for revoked consents in real time.
+==End of OCR for page 25==	
+==Start of OCR for page 26==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| | • Notifications: Inform the user and Data Fiduciaries of consent changes. |
+| :--- | :--- |
+| Workflow | • User accesses the dashboard and selects "Modify or Revoke Consent."<br>• The system displays all active consents.<br>• The user selects a purpose and updates or revokes consent.<br>• The CMS validates the action and updates the consent artifact.<br>• Notifications are sent to all stakeholders (user, Data Fiduciary).<br>• The action is logged for auditing. |
+4.3.3 Raise Grievances or Data Requests
+Field	Details
+Purpose	To provide Data Principals with a simple and transparent mechanism to raise complaints regarding consent violations, misuse of personal data, or to request access, correction, or erasure of their data as per the DPDP Act.
+Features	Grievance Logging: Allow users to submit complaints related to data handling or consent.<br><br>Data Requests: Enable users to request data access, correction, or erasure.<br><br>Tracking System: Provide users with real-time updates on the status of their grievances or requests.<br><br>Notification System: Notify users about resolution status via email or SMS.<br><br>Escalation Mechanism: Automatically escalate unresolved grievances to the designated officer or Data Protection Officer (DPO).
+Functional Requirements	Grievance Submission Interface: Provide an easy-to-use form to log complaints.<br><br>Data Request Options: Include predefined options (e.g., Access Data, Correct Data, Erase Data).<br><br>Reference Number Generation: Generate a unique reference number for each grievance or request.<br><br>Status Updates: Display the status of grievances (e.g., Submitted, In Progress, Resolved).<br><br>Escalation Workflow: Automatically escalate unresolved complaints after a predefined time frame.
+==End of OCR for page 26==	
+==Start of OCR for page 27==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Workflow | 1. Initiation: The user logs into the dashboard and selects the "Raise Grievances or Data Requests" option.<br><br>2. Submission: The user completes the form with required details (e.g., complaint category, description, data request type).<br><br>3. Validation: The CMS validates the submission for completeness and compliance with the DPDP Act.<br><br>4. Acknowledgment: The system generates a unique reference number and notifies the user of successful submission.<br><br>5. Processing: The CMS routes the request to the appropriate team (e.g., DPO or designated department).<br><br>6. Resolution and Updates: The team resolves the issue and updates the status in the CMS, notifying the user at every step.<br><br>7. Escalation (if needed): If unresolved within the stipulated time, the request is escalated to a higher authority.<br><br>8. Closure: Once resolved, the system marks the request as "Closed" and provides the user with a resolution summary. |
+| :--- | :--- |
+4.4 Consent Notifications
+The Consent Notifications Module ensures that all stakeholders—Data Principals, Data
+Fiduciaries and Data Processors—are promptly informed about consent-related
+activities. This module enhances transparency, operational efficiency and compliance
+by delivering real-time updates through multiple channels. Notifications are segmented
+into User Notifications and Fiduciary and Processor Alerts, each catering to specific
+stakeholders and actions.
+4.4.1 User Notifications
+Field	Details
+Purpose	To keep Data Principals informed about their consent-related activities, such as updates, approvals, withdrawals, or renewals, ensuring transparency and trust.
+==End of OCR for page 27==	
+==Start of OCR for page 28==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Features | Notify users about:<br>• Consent approval or rejection.<br>• Consent withdrawal confirmations.<br>• Renewal reminders for expiring consents.<br>• Processing updates for data-related requests (e.g., erasure, correction).<br><br>Multi-channel support for notifications via email, SMS, or in-app messages. |
+| :--- | :--- |
+| Functional Requirements | Notification Triggers: Automatically send notifications based on user actions or system events (e.g., consent expiration, withdrawal).<br><br>Customizable Templates: Predefined notification templates for various scenarios.<br><br>Multi-Language Support: Notifications in languages as listed in the Eighth Schedule of the Constitution of India.<br><br>Acknowledgment Mechanism: Allow users to acknowledge receipt of notifications where necessary. |
+| Workflow | 1. Trigger: A consent-related action (e.g., withdrawal, renewal) is initiated by the user or system.<br><br>2. Notification Generation: The CMS generates a notification based on predefined templates.<br><br>3. Delivery: The notification is delivered to the user via their preferred communication channel (email, SMS, or in-app).<br><br>4. Acknowledgment (Optional): The user acknowledges the notification and the system logs the acknowledgment. |
+4.4.2 Data Fiduciary and Processor Alerts
+Field	Details
+Purpose	To notify Data Fiduciaries and Processors of consent updates, withdrawals, or validation requests to ensure real-time compliance and operational continuity.
+==End of OCR for page 28==	
+==Start of OCR for page 29==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Features | 1. Alerts for:<br>• Consent withdrawal or expiration.<br>• New or updated consents.<br>• System-triggered compliance checks.<br>2. Support for secure API-based alerts for automated workflows.<br>3. Real-time updates to ensure immediate data processing adjustments. |
+| :--- | :--- |
+| Functional Requirements | API Integration: Alert Data Fiduciaries and Processors through secure APIs (e.g., /api/alerts/notify).<br><br>Event-Based Triggers: Automate alerts for specific consent-related events (e.g., a user's consent withdrawal).<br><br>Audit Logging: Record all alerts in the log for compliance and future reference.<br><br>Escalation Workflow: Escalate unacknowledged or unprocessed alerts within a predefined time frame. |
+| Workflow | 1. Trigger: Consent change (e.g., withdrawal, update) is recorded in the CMS.<br><br>2. Alert Generation: CMS generates an alert for the relevant Data Fiduciary or Processor.<br><br>3. Delivery: The alert is delivered via API or email with actionable details (e.g., "Stop processing data for User ID X").<br><br>4. Action Confirmation: Fiduciaries or Processors confirm that they have acted on the alert (e.g., halted data processing).<br><br>5. Escalation (Optional): Unaddressed alerts are escalated to higher authorities or the DPO. |
+4.5 Grievance Redressal Mechanism
+The Grievance Redressal Mechanism ensures that Data Principals can raise complaints
+or grievances related to data processing, privacy violations, or consent management
+issues. It facilitates efficient complaint resolution and compliance with the grievance
+provisions of the DPDP Act.
+4.5.1 Complaint Logging
+Field	Details
+Purpose	To provide Data Principals with a platform to submit complaints related to data misuse, consent violations, or grievances about data handling practices.
+==End of OCR for page 29==	
+==Start of OCR for page 30==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Features | Simplified Complaint Form: User-friendly interface to log complaints with predefined categories.<br><br>Complaint Categorization: Automatically categorize complaints (e.g., consent violation, data breach, processing errors).<br><br>Reference Number Generation: Assign a unique reference ID for each complaint for tracking purposes.<br><br>Acknowledgment Notifications: Send confirmation of complaint receipt to the user. |
+| :--- | :--- |
+| Functional Requirements | Categorization System: Predefine complaint categories for streamlined processing.<br><br>Multi-Language Support: Allow users to submit complaints in regional languages.<br><br>Metadata Logging: Log complaint details such as user ID, timestamp, category and description.<br><br>Secure Submission: Encrypt all complaint submissions using TLS 1.3 for secure transmission.<br><br>Integration with CMS: Link complaint details with consent records for context. |
+| Workflow | 1. Initiation: The Data Principal logs into the system and navigates to the complaint section.<br><br>2. Form Completion: The user fills out the complaint form, providing details such as category, description and supporting evidence (if applicable).<br><br>3. Submission Validation: The system validates the form for completeness and compliance.<br><br>4. Acknowledgment: A unique reference ID is generated and the user receives a confirmation notification.<br><br>5. Routing: The complaint is routed to the appropriate department or team for resolution. |
+4.5.2 Resolution Tracking
+Field	Details
+==End of OCR for page 30==	
+==Start of OCR for page 31==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+| Purpose | To provide Data Principals with real-time updates on the status of their complaints and ensure timely resolution of grievances. |
+| :--- | :--- |
+| Features | Complaint Status Dashboard: Display real-time status updates (e.g., Submitted, In Progress, Resolved).<br><br>Escalation Mechanism: Automatically escalate unresolved complaints after a predefined time frame.<br><br>User Notifications: Notify users about status changes and resolution outcomes.<br><br>Action Logs: Maintain detailed logs of actions taken during the resolution process.<br><br>Feedback Collection: Allow users to provide feedback on the resolution process. |
+| Functional Requirements | Real-Time Updates: Enable dynamic status updates visible to users.<br><br>Escalation Triggers: Set time-based escalation rules for unresolved complaints.<br><br>Audit Logging: Record every action taken for complaint resolution in an immutable format.<br><br>Notification System: Send automatic updates to users via email or SMS.<br><br>Resolution Workflows: Predefine workflows for different complaint categories to standardize processing. |
+| Workflow | 1. Status Update: The complaint's status is updated as it progresses through the resolution stages.<br><br>2. Notifications: The user receives status updates at each significant stage (e.g., Assigned, Resolved).<br><br>3. Escalation: If the complaint remains unresolved for a predefined time, it is escalated to a senior authority or the Data Protection Officer (DPO).<br><br>4. Resolution Closure: Once resolved, the system updates the status to "Closed" and sends a resolution summary to the user.<br><br>5. Feedback Collection: Users can submit feedback on the resolution process. |
+==End of OCR for page 31==
+==Start of OCR for page 32==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+4.6 System Administration
+The System Administration Module provides administrative capabilities to ensure
+secure and efficient operations of the Consent Management System (CMS). It includes
+managing user roles, configuring policies and maintaining compliance standards. Key
+sub-modules include User Role Management and Data Retention Policy Configuration.
+4.6.1 User Role Management
+Field	Details
+Purpose	To define and manage access controls within the CMS, ensuring only authorized personnel can perform specific actions based on their roles.
+Features	Role-Based Access Control (RBAC): Assign permissions based on predefined roles (e.g., Administrator, Auditor, Data Protection Officer).<br><br>Custom Role Creation: Allow customization of roles to match organizational needs.<br><br>Permission Hierarchy: Enable multi-level access controls to segregate responsibilities.<br><br>Audit Trail Integration: Maintain logs of role assignments and changes.
+Functional Requirements	Role Definition: Predefine roles such as Admin, DPO, Auditor and Operator with their respective permissions.<br><br>Access Revocation: Allow real-time removal of user roles in case of misuse or unauthorized activities.<br><br>Authentication Integration: Support multi-factor authentication (MFA) and single sign-on (SSO) for admin accounts.<br><br>Role Audits: Provide audit reports of user access and role modifications.
+Workflow	1. Role Assignment: Admin assigns roles to users based on their responsibilities.<br><br>2. Permission Validation: System enforces access permissions based on the assigned role.<br><br>3. Monitoring: The system tracks all user activities and logs any role changes.<br><br>4. Revocation (if required): Admin revokes or modifies roles in real time as necessary.
+==End of OCR for page 32==	
+==Start of OCR for page 33==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+4.6.2 Data Retention Policy Configuration
+Field	Details
+Purpose	To configure data retention policies to comply with the DPDP Act, ensuring that personal data and consent records are retained or deleted based on predefined schedules.
+Features	• Retention Schedules: Define data retention periods for personal data and consent artifacts.<br>• Automated Deletion: Schedule automatic purging of expired records.<br>• Exemption Handling: Configure exceptions for data retained under legal or regulatory requirements.<br>• Notifications: Notify administrators before critical data is deleted.
+Functional Requirements	• Policy Definition: Allow administrators to create, modify and apply retention policies to specific data categories.<br>• Compliance Validation: Ensure that retention periods adhere to regulatory requirements.<br>• Data Purging: Implement secure deletion protocols (e.g., cryptographic erasure) for expired data.<br>• Audit Logging: Maintain a record of all data retention and deletion activities.
+Workflow	1. Policy Creation: Admin defines data retention policies, specifying retention periods for different data categories.<br><br>2. Policy Enforcement: CMS enforces policies by monitoring data age and triggering deletion workflows for expired records.<br><br>3. Exception Handling: System identifies records exempted from deletion due to legal requirements.<br><br>4. Audit Trail: All retention and deletion activities are logged for compliance purposes.
+4.7 Logging
+Logging ensures that all consent-related activities within the Consent Management
+System (CMS) are documented in a transparent, secure and tamper-proof manner. This
+provides an immutable trail for compliance verification, dispute resolution and
+regulatory audits as mandated by the DPDP Act.
+Comprehensive Logging: Record every consent action, including:
+Consent grant, update and withdrawal.
+Metadata such as User ID, Purpose ID, timestamps and consent status.
+Notifications sent to Data Fiduciaries and acknowledgment receipts.
+==End of OCR for page 33==
+==Start of OCR for page 34==
+Ne GD
+National e-Governance Division
+Ministry of Electronics and Information Technology
+Digital India
+Power To Empower
+Audit Readiness:
+Maintain audit logs in a structured format for easy retrieval and reporting.
+Ensure logs are compliant with regulatory requirements for data retention and security.
+Access Control: Restrict access to audit logs using Role-Based Access Control (RBAC) and Multi-Factor Authentication (MFA).
+4.7.1 Audit Logs
+Immutable audit logs are a cornerstone of a secure and transparent Consent
+Management System (CMS). They ensure that every consent-related action is
+recorded in a tamper-proof manner, providing an auditable history of all interactions
+for compliance with the DPDP Act. Immutable logs offer organizations the ability to
+demonstrate accountability and resolve disputes efficiently.
+Metadata for Audit Logs
+Each audit log entry must contain the following metadata:
+Field	Description
+Log ID	Unique identifier for the audit log entry.
+User ID	Unique identifier for the Data Principal.
+Purpose ID	Identifier for the specific purpose of the consent action.
+Action Type	Action performed (grant, withdraw, update, validate, or notification).
+Timestamp	Precise date and time of the action.
+Consent Status	Status of the consent (e.g., active, withdrawn, expired).
+Initiator	The entity that triggered the action (e.g., user, system, Data Fiduciary).
+Source IP	IP address of the device initiating the action.
+Audit Hash	A cryptographic hash of the log entry to ensure tamper detection.
+==End of OCR for page 34==	
