@@ -120,6 +120,30 @@ interface DashboardConsentRecord extends ConsentRecord {
   expiresAt?: Date;
   purposes: ProcessingPurpose[];
   consentMethod: string;
+  linkedNoticeId: string;
+  linkedNoticeName: string;
+  noticeContent: string;
+}
+
+// Interface for comprehensive notice display
+interface ConsentNoticeData {
+  id: string;
+  title: string;
+  content: string;
+  dataFiduciaryName: string;
+  version: string;
+  language: string;
+  createdAt: Date;
+  purposes: ProcessingPurpose[];
+  legalBasis: string;
+  retentionPeriod: string;
+  dataCategories: string[];
+  dataFiduciaryContact: {
+    dpo: string;
+    grievance: string;
+    address: string;
+  };
+  userRights: string[];
 }
 
 // Mock data for demonstration
@@ -150,6 +174,9 @@ const mockConsentRecords: DashboardConsentRecord[] = [
     grantedAt: new Date('2024-01-15T10:30:00Z'),
     expiresAt: new Date('2024-07-15T10:30:00Z'),
     consentMethod: 'Explicit Click',
+    linkedNoticeId: 'NOT-TC-001',
+    linkedNoticeName: 'TechCorp Data Processing Notice',
+    noticeContent: 'Comprehensive data processing notice content...',
     purposes: [
       {
         id: 'account_mgmt',
@@ -198,6 +225,9 @@ const mockConsentRecords: DashboardConsentRecord[] = [
     grantedAt: new Date('2024-02-01T14:20:00Z'),
     expiresAt: new Date('2024-08-01T14:20:00Z'),
     consentMethod: 'Mobile App Toggle',
+    linkedNoticeId: 'NOT-MA-002',
+    linkedNoticeName: 'Marketing Analytics Privacy Notice',
+    noticeContent: 'Marketing analytics data processing notice...',
     purposes: [
       {
         id: 'marketing',
@@ -358,6 +388,10 @@ export default function DataPrincipalDashboard() {
   const [showRequestTypeSelection, setShowRequestTypeSelection] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
   const [submittedRequestId, setSubmittedRequestId] = useState<string>('');
+
+  // Notice viewing states
+  const [noticeDialogOpen, setNoticeDialogOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState<ConsentNoticeData | null>(null);
 
   // Simulate real-time notifications
   useEffect(() => {
@@ -615,12 +649,23 @@ export default function DataPrincipalDashboard() {
 
   const getStatusColor = (status: ConsentStatus) => {
     switch (status) {
-      case ConsentStatus.GRANTED: return 'bg-green-100 text-green-800';
-      case ConsentStatus.RENEWED: return 'bg-blue-100 text-blue-800';
-      case ConsentStatus.WITHDRAWN: return 'bg-red-100 text-red-800';
-      case ConsentStatus.EXPIRED: return 'bg-gray-100 text-gray-800';
-      case ConsentStatus.PENDING: return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case ConsentStatus.GRANTED: return 'bg-blue-100 text-blue-800 border-blue-200';
+      case ConsentStatus.RENEWED: return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case ConsentStatus.WITHDRAWN: return 'bg-red-100 text-red-800 border-red-200';
+      case ConsentStatus.EXPIRED: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case ConsentStatus.PENDING: return 'bg-orange-100 text-orange-800 border-orange-200';
+      default: return 'bg-slate-100 text-slate-800 border-slate-200';
+    }
+  };
+
+  const getConsentCardColor = (status: ConsentStatus) => {
+    switch (status) {
+      case ConsentStatus.GRANTED: return 'border-blue-200 bg-blue-50/30';
+      case ConsentStatus.RENEWED: return 'border-indigo-200 bg-indigo-50/30';
+      case ConsentStatus.WITHDRAWN: return 'border-red-200 bg-red-50/30';
+      case ConsentStatus.EXPIRED: return 'border-gray-200 bg-gray-50/30';
+      case ConsentStatus.PENDING: return 'border-orange-200 bg-orange-50/30';
+      default: return 'border-slate-200 bg-slate-50/30';
     }
   };
 
@@ -788,6 +833,87 @@ export default function DataPrincipalDashboard() {
     }
   };
 
+  // Notice viewing handler
+  const handleViewNotice = (consent: DashboardConsentRecord) => {
+    const noticeData: ConsentNoticeData = {
+      id: consent.linkedNoticeId,
+      title: consent.linkedNoticeName,
+      content: generateNoticeContent(consent),
+      dataFiduciaryName: consent.dataFiduciaryName,
+      version: consent.version,
+      language: consent.language,
+      createdAt: consent.grantedAt,
+      purposes: consent.purposes,
+      legalBasis: 'Consent under Section 7 of DPDP Act 2023',
+      retentionPeriod: consent.purposes[0]?.retentionPeriod || '3 years',
+      dataCategories: consent.purposes.flatMap(p => p.dataTypes),
+      dataFiduciaryContact: {
+        dpo: `dpo@${consent.dataFiduciaryName.toLowerCase().replace(/\s+/g, '')}.com`,
+        grievance: `grievance@${consent.dataFiduciaryName.toLowerCase().replace(/\s+/g, '')}.com`,
+        address: `${consent.dataFiduciaryName}, Data Protection Office, Mumbai, India`
+      },
+      userRights: [
+        'Right to access your personal data',
+        'Right to correct inaccurate data',
+        'Right to erase your data',
+        'Right to data portability',
+        'Right to withdraw consent',
+        'Right to file grievances'
+      ]
+    };
+    
+    setSelectedNotice(noticeData);
+    setNoticeDialogOpen(true);
+  };
+
+  const generateNoticeContent = (consent: DashboardConsentRecord): string => {
+    return `
+      <div class="space-y-6">
+        <div class="border-b pb-4">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Data Processing Notice</h1>
+          <p class="text-gray-600">In compliance with the Digital Personal Data Protection Act 2023</p>
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Data Fiduciary Information</h2>
+            <p><strong>Organization:</strong> ${consent.dataFiduciaryName}</p>
+            <p><strong>Contact:</strong> dpo@${consent.dataFiduciaryName.toLowerCase().replace(/\s+/g, '')}.com</p>
+          </div>
+          
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Purposes of Processing</h2>
+            ${consent.purposes.map(purpose => `
+              <div class="mb-3 p-3 bg-blue-50 rounded-lg">
+                <h3 class="font-medium text-blue-900">${purpose.name}</h3>
+                <p class="text-sm text-blue-800">${purpose.description}</p>
+                <p class="text-xs text-blue-600 mt-1">Legal Basis: ${purpose.legalBasis}</p>
+                <p class="text-xs text-blue-600">Retention: ${purpose.retentionPeriod}</p>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Your Rights Under DPDP Act 2023</h2>
+            <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
+              <li>Right to access your personal data (Section 11)</li>
+              <li>Right to correction and erasure (Section 12)</li>
+              <li>Right to data portability (Section 13)</li>
+              <li>Right to withdraw consent at any time</li>
+              <li>Right to file grievances (Section 17)</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Contact Information</h2>
+            <p><strong>Data Protection Officer:</strong> dpo@${consent.dataFiduciaryName.toLowerCase().replace(/\s+/g, '')}.com</p>
+            <p><strong>Grievance Officer:</strong> grievance@${consent.dataFiduciaryName.toLowerCase().replace(/\s+/g, '')}.com</p>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Notifications */}
@@ -849,7 +975,7 @@ export default function DataPrincipalDashboard() {
           />
         )}
 
-        {/* Integrated Consent Notice - BRD Section 4.1 Implementation */}
+        {/* Integrated Consent Notice */}
         <IntegratedConsentNotice 
           userId={user.id}
           onConsentCompleted={(artifact: ConsentArtifact) => {
@@ -978,7 +1104,7 @@ export default function DataPrincipalDashboard() {
                 <div className="space-y-4">
                   <p className="text-sm text-purple-700">
                     This implementation matches your exact wireframe specification with banner/modal display modes, 
-                    granular consent controls, multi-language support, and BRD Section 4.1.1 compliance.
+                    granular consent controls, multi-language support, and DPDP Act 2023 compliance.
                   </p>
                   
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1050,39 +1176,39 @@ export default function DataPrincipalDashboard() {
               </CardContent>
             </Card>
 
-            {/* BRD Workflow Demo Section */}
+            {/* Privacy Management Overview */}
             <Card className="border-blue-200 bg-blue-50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  BRD Section 4.1 - Consent Notice Integration Demo
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  Privacy Management Overview
           </CardTitle>
                 <CardDescription>
-                  Experience the complete login workflow with consent requirement detection and dynamic notice rendering
+                  Comprehensive privacy controls and consent management features
           </CardDescription>
         </CardHeader>
               <CardContent>
           <div className="space-y-4">
                   <p className="text-sm text-blue-700">
-                    The system automatically detects consent requirements upon login and presents integrated notices 
-                    with dynamic templating, multi-language support, and real-time artifact creation.
+                    Your privacy dashboard provides complete control over your personal data with automated consent 
+                    management, real-time notifications, and comprehensive audit trails.
                   </p>
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className="bg-green-100 text-green-700">
-                      ✓ Consent Detection API
+                      ✓ Consent Management
                     </Badge>
                     <Badge variant="outline" className="bg-green-100 text-green-700">
-                      ✓ Dynamic Notice Rendering
+                      ✓ Notice Viewing
                     </Badge>
                     <Badge variant="outline" className="bg-green-100 text-green-700">
-                      ✓ Real-time Workflow State
+                      ✓ Data Rights Exercising
                     </Badge>
                     <Badge variant="outline" className="bg-green-100 text-green-700">
-                      ✓ Artifact Creation
+                      ✓ Audit Trail Access
                     </Badge>
                     </div>
                   <p className="text-xs text-gray-600">
-                    Refresh the page or re-login to trigger the consent requirement detection workflow.
+                    All features are designed in compliance with the Digital Personal Data Protection Act 2023.
                     </p>
                   </div>
               </CardContent>
@@ -1179,8 +1305,8 @@ export default function DataPrincipalDashboard() {
                   <Card 
                     key={consent.id} 
                     className={`cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] ${
-                      isExpiringSoon ? 'border-yellow-400 bg-yellow-50 hover:bg-yellow-100' : 'hover:border-blue-300'
-                    }`}
+                      isExpiringSoon ? 'border-orange-400 bg-orange-50/50 hover:bg-orange-100/50' : getConsentCardColor(consent.status)
+                    } hover:shadow-xl`}
                     onClick={() => {
                       setSelectedConsent(consent);
                       addNotification('info', `Viewing details for ${consent.dataFiduciaryName} consent`);
@@ -1200,11 +1326,11 @@ export default function DataPrincipalDashboard() {
             </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                          <Badge className={getStatusColor(consent.status)}>
+                          <Badge className={getStatusColor(consent.status)} variant="outline">
                             {consent.status.replace('_', ' ')}
                           </Badge>
                           {isExpiringSoon && (
-                            <Badge variant="outline" className="border-yellow-500 text-yellow-700">
+                            <Badge variant="outline" className="border-orange-500 text-orange-700 bg-orange-50">
                               <Clock className="h-3 w-3 mr-1" />
                               Expires in {daysUntilExpiry} days
                             </Badge>
@@ -1271,6 +1397,32 @@ export default function DataPrincipalDashboard() {
                           </div>
                   </div>
                   
+                        {/* Linked Notice Information */}
+                        <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <FileText className="w-4 h-4 text-blue-600" />
+                                <span className="text-sm font-medium text-blue-800">Linked Notice</span>
+                              </div>
+                              <p className="text-sm text-blue-700">{consent.linkedNoticeName}</p>
+                              <p className="text-xs text-blue-600">ID: {consent.linkedNoticeId}</p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewNotice(consent);
+                              }}
+                              className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Notice
+                            </Button>
+                          </div>
+                        </div>
+
                         {/* Action Buttons */}
                         <div className="flex flex-wrap gap-2 pt-4 border-t">
                           <Button
@@ -1338,7 +1490,7 @@ export default function DataPrincipalDashboard() {
               <CardHeader>
                 <CardTitle>Data Principal Rights</CardTitle>
                 <CardDescription>
-                  Exercise your rights under the DPDP Act 2023
+                  Exercise your rights under the Digital Personal Data Protection Act 2023
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -2582,6 +2734,150 @@ export default function DataPrincipalDashboard() {
           onClose={() => setHistoryDialogOpen(false)}
           userRole="DATA_PRINCIPAL"
         />
+
+        {/* Notice Viewing Dialog */}
+        <Dialog open={noticeDialogOpen} onOpenChange={setNoticeDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+                {selectedNotice?.title}
+              </DialogTitle>
+              <DialogDescription>
+                Complete data processing notice as per Digital Personal Data Protection Act 2023
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedNotice && (
+              <div className="space-y-6">
+                {/* Notice Header */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">Data Fiduciary</Label>
+                      <p className="text-blue-900 font-semibold">{selectedNotice.dataFiduciaryName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">Notice ID</Label>
+                      <p className="text-blue-900 font-mono text-sm">{selectedNotice.id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">Version</Label>
+                      <p className="text-blue-900">{selectedNotice.version}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">Language</Label>
+                      <p className="text-blue-900 capitalize">{selectedNotice.language}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Processing Purposes */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Processing Purposes</h3>
+                  <div className="space-y-3">
+                    {selectedNotice.purposes.map((purpose, index) => (
+                      <div key={purpose.id} className="p-4 bg-gray-50 rounded-lg border">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{purpose.name}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{purpose.description}</p>
+                            <div className="mt-2 space-y-1">
+                              <p className="text-xs text-gray-500">
+                                <strong>Legal Basis:</strong> {purpose.legalBasis}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                <strong>Retention Period:</strong> {purpose.retentionPeriod}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                <strong>Data Types:</strong> {purpose.dataTypes.join(', ')}
+                              </p>
+                            </div>
+                          </div>
+                          {purpose.isEssential && (
+                            <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                              Essential
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Your Rights */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Rights Under DPDP Act 2023</h3>
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedNotice.userRights.map((right, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          <span className="text-sm text-green-800">{right}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg border">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Data Protection Officer</Label>
+                        <p className="text-gray-900">{selectedNotice.dataFiduciaryContact.dpo}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Grievance Officer</Label>
+                        <p className="text-gray-900">{selectedNotice.dataFiduciaryContact.grievance}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium text-gray-700">Address</Label>
+                        <p className="text-gray-900">{selectedNotice.dataFiduciaryContact.address}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notice Footer */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">Notice Information</span>
+                  </div>
+                  <div className="text-xs text-blue-700 space-y-1">
+                    <p><strong>Created:</strong> {selectedNotice.createdAt.toLocaleDateString()}</p>
+                    <p><strong>Legal Basis:</strong> {selectedNotice.legalBasis}</p>
+                    <p><strong>Data Categories:</strong> {selectedNotice.dataCategories.join(', ')}</p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-between items-center pt-4 border-t">
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => {
+                      addNotification('success', `Notice ${selectedNotice.id} downloaded as PDF`);
+                    }}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      addNotification('success', `Notice ${selectedNotice.id} exported successfully`);
+                    }}>
+                      <Share className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                  <Button onClick={() => setNoticeDialogOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

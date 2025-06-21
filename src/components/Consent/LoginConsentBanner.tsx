@@ -140,9 +140,29 @@ export default function LoginConsentBanner({
 
   const renderConsentNotice = () => (
     <div className="bg-white border border-blue-200 rounded-lg shadow-lg">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
+      {/* CMS Application Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-lg">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Consent Management System</h2>
+              <p className="text-blue-100 text-sm">Digital Personal Data Protection Act 2023 Compliance</p>
+            </div>
+          </div>
+          {!mockRequirements.some(req => req.isBlocking) && (
+            <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-white/70 hover:text-white hover:bg-white/10">
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="mb-6">
+          <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
               <Lock className="w-4 h-4 text-blue-600" />
             </div>
@@ -151,11 +171,28 @@ export default function LoginConsentBanner({
               <p className="text-sm text-gray-600">Data Collection Notice</p>
             </div>
           </div>
-          {!mockRequirements.some(req => req.isBlocking) && (
-            <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </Button>
-          )}
+          
+          {/* Data Fiduciary Information */}
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-700">Data Fiduciary:</span>
+                <p className="text-gray-900">Privacy Flow Control System</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">DPO Contact:</span>
+                <p className="text-gray-900">dpo@privacyflow.com</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Grievance Officer:</span>
+                <p className="text-gray-900">grievance@privacyflow.com</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Notice Version:</span>
+                <p className="text-gray-900">v1.0 - {new Date().toLocaleDateString()}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <Separator className="mb-6" />
@@ -225,24 +262,53 @@ export default function LoginConsentBanner({
           ))}
         </div>
 
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <div className="flex items-start space-x-2">
-            <Shield className="w-4 h-4 text-blue-600 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-blue-900 mb-1">Your Rights Under DPDP Act 2023:</p>
-              <p className="text-blue-700">
-                📋 Access, Correct, Delete, Port Data • 🕒 Data Retention Policies Apply • 📞 Contact DPO for grievances
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="space-y-3">
+            <div className="flex items-start space-x-2">
+              <Shield className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900 mb-2">Your Rights Under DPDP Act 2023:</p>
+                <div className="space-y-1 text-blue-700">
+                  <p>📋 <strong>Access:</strong> Request a copy of your personal data</p>
+                  <p>✏️ <strong>Correct:</strong> Update inaccurate or incomplete information</p>
+                  <p>🗑️ <strong>Delete:</strong> Request erasure of your personal data</p>
+                  <p>📤 <strong>Port:</strong> Transfer your data to another service provider</p>
+                  <p>❌ <strong>Withdraw:</strong> Revoke consent at any time</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* User Rights Exercise URL */}
+            <div className="bg-white p-3 rounded border border-blue-300">
+              <div className="flex items-center space-x-2 mb-1">
+                <Globe className="w-4 h-4 text-blue-600" />
+                <span className="font-medium text-blue-900 text-sm">Exercise Your Rights:</span>
+              </div>
+              <p className="text-xs text-blue-700 break-all">
+                <strong>Portal URL:</strong> https://privacyflow.com/data-rights
               </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Access this portal anytime to exercise your data protection rights or file grievances
+              </p>
+            </div>
+
+            {/* Contact Information */}
+            <div className="bg-white p-3 rounded border border-blue-300">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="font-medium text-blue-900">📧 Grievance Email:</span>
+                  <p className="text-blue-700">grievance@privacyflow.com</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-900">📞 DPO Helpline:</span>
+                  <p className="text-blue-700">+91-80-1234-5678</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-          <Button variant="outline" onClick={() => window.open('/privacy-policy', '_blank')} className="flex items-center space-x-2">
-            <FileText className="w-4 h-4" />
-            <span>View Full Notice</span>
-          </Button>
-
+        <div className="flex justify-end mt-6 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-3">
             {!mockRequirements.some(req => req.isBlocking) && (
               <Button variant="ghost" onClick={handleDismiss} disabled={isSubmitting}>

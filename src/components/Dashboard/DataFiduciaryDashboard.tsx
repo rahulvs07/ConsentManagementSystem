@@ -116,6 +116,8 @@ interface ConsentCollectionFlow {
   collectionMethod: 'BANNER' | 'MODAL' | 'FORM' | 'API';
   languages: string[];
   templateId: string;
+  linkedNoticeId?: string; // ID of the linked notice
+  linkedNoticeName?: string; // Name of the linked notice
   createdAt: Date;
   lastUpdated: Date;
   metrics: {
@@ -187,6 +189,27 @@ interface ConsentLinkedGrievance extends GrievanceTicket {
   };
 }
 
+interface BulkValidationBatch {
+  id: string;
+  name: string;
+  purposeId: string;
+  purposeName: string;
+  dataPrincipals: Array<{
+    userId: string;
+    email: string;
+    name: string;
+    consentStatus: ConsentStatus;
+    lastValidated?: Date;
+  }>;
+  totalCount: number;
+  validCount: number;
+  invalidCount: number;
+  pendingCount: number;
+  createdAt: Date;
+  lastValidated?: Date;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+}
+
 const DataFiduciaryDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [processingRequests, setProcessingRequests] = useState<DataProcessingRequest[]>([]);
@@ -220,6 +243,121 @@ const DataFiduciaryDashboard = () => {
   const [statusChangeReason, setStatusChangeReason] = useState('');
   const [statusChangeNotes, setStatusChangeNotes] = useState('');
   const [newStatus, setNewStatus] = useState<string>('');
+
+  // Notice Management States
+  const [selectedDataFiduciary, setSelectedDataFiduciary] = useState('df_ecommerce');
+  const [selectedLanguage, setSelectedLanguage] = useState('english');
+  const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
+  const [generatedNotices, setGeneratedNotices] = useState<Array<{
+    id: string;
+    title: string;
+    language: string;
+    purposes: string[];
+    createdAt: Date;
+    version: string;
+    status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+    content: string;
+  }>>([
+    {
+      id: 'NOT-001',
+      title: 'E-commerce Data Processing Notice',
+      language: 'English',
+      purposes: ['Account Management', 'Marketing Communications'],
+      createdAt: new Date('2024-01-15'),
+      version: '2.0',
+      status: 'PUBLISHED',
+      content: 'Complete notice content...'
+    },
+    {
+      id: 'NOT-002', 
+      title: 'बैंकिंग डेटा प्रसंस्करण सूचना',
+      language: 'हिन्दी (Hindi)',
+      purposes: ['Account Management', 'Security Monitoring'],
+      createdAt: new Date('2024-01-10'),
+      version: '1.5',
+      status: 'PUBLISHED',
+      content: 'Complete notice content in Hindi...'
+    }
+  ]);
+  const [selectedNotice, setSelectedNotice] = useState<typeof generatedNotices[0] | null>(null);
+  const [viewNoticeDialogOpen, setViewNoticeDialogOpen] = useState(false);
+
+  // Notice Linking States
+  const [noticeLinkingDialogOpen, setNoticeLinkingDialogOpen] = useState(false);
+  const [selectedFlowForLinking, setSelectedFlowForLinking] = useState<ConsentCollectionFlow | null>(null);
+  const [selectedNoticeForLinking, setSelectedNoticeForLinking] = useState('');
+
+  // Bulk Validation States
+  const [bulkValidationDialogOpen, setBulkValidationDialogOpen] = useState(false);
+  const [bulkValidationBatches, setBulkValidationBatches] = useState<BulkValidationBatch[]>([
+    {
+      id: 'BULK-001',
+      name: 'Marketing Campaign Validation',
+      purposeId: 'marketing_001',
+      purposeName: 'Marketing Campaign',
+      dataPrincipals: [
+        { userId: 'DP001', email: 'user1@example.com', name: 'John Doe', consentStatus: 'GRANTED', lastValidated: new Date('2024-01-10') },
+        { userId: 'DP002', email: 'user2@example.com', name: 'Jane Smith', consentStatus: 'PENDING', lastValidated: undefined },
+        { userId: 'DP003', email: 'user3@example.com', name: 'Bob Johnson', consentStatus: 'EXPIRED', lastValidated: new Date('2023-12-15') },
+        { userId: 'DP004', email: 'user4@example.com', name: 'Alice Brown', consentStatus: 'GRANTED', lastValidated: new Date('2024-01-08') },
+        { userId: 'DP005', email: 'user5@example.com', name: 'Charlie Wilson', consentStatus: 'REVOKED', lastValidated: new Date('2024-01-05') }
+      ],
+      totalCount: 5,
+      validCount: 2,
+      invalidCount: 2,
+      pendingCount: 1,
+      createdAt: new Date('2024-01-01'),
+      lastValidated: new Date('2024-01-10'),
+      status: 'COMPLETED'
+    },
+    {
+      id: 'BULK-002',
+      name: 'Analytics Data Validation',
+      purposeId: 'analytics_001',
+      purposeName: 'User Analytics',
+      dataPrincipals: [
+        { userId: 'DP006', email: 'user6@example.com', name: 'David Lee', consentStatus: 'GRANTED', lastValidated: new Date('2024-01-12') },
+        { userId: 'DP007', email: 'user7@example.com', name: 'Emma Davis', consentStatus: 'GRANTED', lastValidated: new Date('2024-01-11') },
+        { userId: 'DP008', email: 'user8@example.com', name: 'Frank Miller', consentStatus: 'PENDING', lastValidated: undefined }
+      ],
+      totalCount: 3,
+      validCount: 2,
+      invalidCount: 0,
+      pendingCount: 1,
+      createdAt: new Date('2024-01-05'),
+      lastValidated: new Date('2024-01-12'),
+      status: 'COMPLETED'
+    }
+  ]);
+  const [selectedBatchForValidation, setSelectedBatchForValidation] = useState<BulkValidationBatch | null>(null);
+  const [bulkValidationResultsDialogOpen, setBulkValidationResultsDialogOpen] = useState(false);
+
+  // All 22 official Indian languages as per DPDP Act 2023
+  const indianLanguages = [
+    { value: 'english', label: 'English' },
+    { value: 'hindi', label: 'हिन्दी (Hindi)' },
+    { value: 'bengali', label: 'বাংলা (Bengali)' },
+    { value: 'tamil', label: 'தமிழ் (Tamil)' },
+    { value: 'telugu', label: 'తెలుగు (Telugu)' },
+    { value: 'marathi', label: 'मराठी (Marathi)' },
+    { value: 'gujarati', label: 'ગુજરાતી (Gujarati)' },
+    { value: 'kannada', label: 'ಕನ್ನಡ (Kannada)' },
+    { value: 'malayalam', label: 'മലയാളം (Malayalam)' },
+    { value: 'punjabi', label: 'ਪੰਜਾਬੀ (Punjabi)' },
+    { value: 'assamese', label: 'অসমীয়া (Assamese)' },
+    { value: 'oriya', label: 'ଓଡ଼ିଆ (Oriya)' },
+    { value: 'urdu', label: 'اردو (Urdu)' },
+    { value: 'kashmiri', label: 'कॉशुर (Kashmiri)' },
+    { value: 'sindhi', label: 'सिन्धी (Sindhi)' },
+    { value: 'nepali', label: 'नेपाली (Nepali)' },
+    { value: 'konkani', label: 'कोंकणी (Konkani)' },
+    { value: 'manipuri', label: 'মৈতৈলোন্ (Manipuri)' },
+    { value: 'bodo', label: 'बर\' (Bodo)' },
+    { value: 'dogri', label: 'डोगरी (Dogri)' },
+    { value: 'maithili', label: 'मैथिली (Maithili)' },
+    { value: 'santhali', label: 'ᱥᱟᱱᱛᱟᱲᱤ (Santhali)' },
+    { value: 'sanskrit', label: 'संस्कृत (Sanskrit)' }
+  ];
 
   // Enhanced mock data initialization for BRD compliance
   useEffect(() => {
@@ -329,6 +467,8 @@ const DataFiduciaryDashboard = () => {
         collectionMethod: 'FORM',
         languages: ['en', 'hi', 'mr', 'bn', 'ml'],
         templateId: 'template_reg_001',
+        linkedNoticeId: 'NOT-001',
+        linkedNoticeName: 'E-commerce Data Processing Notice',
         createdAt: new Date('2024-01-01'),
         lastUpdated: new Date('2024-01-15'),
         metrics: {
@@ -347,6 +487,8 @@ const DataFiduciaryDashboard = () => {
         collectionMethod: 'BANNER',
         languages: ['en', 'hi'],
         templateId: 'template_banner_001',
+        linkedNoticeId: 'NOT-002',
+        linkedNoticeName: 'बैंकिंग डेटा प्रसंस्करण सूचना',
         createdAt: new Date('2024-01-10'),
         lastUpdated: new Date('2024-01-18'),
         metrics: {
@@ -891,6 +1033,127 @@ const DataFiduciaryDashboard = () => {
     return [];
   };
 
+  // Notice Management Handlers
+  const handlePurposeToggle = (purpose: string) => {
+    setSelectedPurposes(prev => 
+      prev.includes(purpose) 
+        ? prev.filter(p => p !== purpose)
+        : [...prev, purpose]
+    );
+  };
+
+  const handleGenerateNotice = () => {
+    const newNotice = {
+      id: `NOT-${String(generatedNotices.length + 1).padStart(3, '0')}`,
+      title: `${selectedDataFiduciary === 'df_ecommerce' ? 'E-commerce' : selectedDataFiduciary === 'df_fintech' ? 'Banking' : 'Healthcare'} Data Processing Notice`,
+      language: indianLanguages.find(lang => lang.value === selectedLanguage)?.label || 'English',
+      purposes: selectedPurposes,
+      createdAt: new Date(),
+      version: '1.0',
+      status: 'DRAFT' as const,
+      content: 'Generated notice content based on selected purposes and language...'
+    };
+    
+    setGeneratedNotices(prev => [newNotice, ...prev]);
+    addNotification('success', `Notice generated successfully in ${newNotice.language}`);
+  };
+
+  const handleSaveNotice = () => {
+    addNotification('success', 'Notice saved successfully');
+  };
+
+  const handleDownloadNotice = (format: 'pdf' | 'docx') => {
+    addNotification('success', `Notice downloaded as ${format.toUpperCase()}`);
+  };
+
+  const handleViewNotice = (notice: typeof generatedNotices[0]) => {
+    setSelectedNotice(notice);
+    setViewNoticeDialogOpen(true);
+  };
+
+  const getStatusBadgeVariantForNotice = (status: string) => {
+    switch (status) {
+      case 'PUBLISHED': return 'default';
+      case 'DRAFT': return 'secondary';
+      case 'ARCHIVED': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
+  // Notice Linking Handlers  
+  const handleManageNoticeLink = (flow: ConsentCollectionFlow) => {
+    setSelectedFlowForLinking(flow);
+    setSelectedNoticeForLinking(flow.linkedNoticeId || '');
+    setNoticeLinkingDialogOpen(true);
+  };
+
+  const handleLinkNoticeToFlow = () => {
+    if (selectedFlowForLinking && selectedNoticeForLinking) {
+      const selectedNotice = generatedNotices.find(n => n.id === selectedNoticeForLinking);
+      if (selectedNotice) {
+        // Update the flow with linked notice
+        setConsentFlows(prevFlows => 
+          prevFlows.map(flow => 
+            flow.id === selectedFlowForLinking.id 
+              ? { 
+                  ...flow, 
+                  linkedNoticeId: selectedNotice.id,
+                  linkedNoticeName: `${selectedNotice.language === 'english' ? 'E-commerce' : 'बैंकिंग'} Data Processing Notice`,
+                  lastUpdated: new Date()
+                }
+              : flow
+          )
+        );
+        addNotification('success', `Notice linked to ${selectedFlowForLinking.name} successfully`);
+        setNoticeLinkingDialogOpen(false);
+        setSelectedFlowForLinking(null);
+        setSelectedNoticeForLinking('');
+      }
+    }
+  };
+
+  // Bulk Validation Handlers
+  const handleCreateBulkValidation = () => {
+    setBulkValidationDialogOpen(true);
+  };
+
+  const handleRunBulkValidation = (batch: BulkValidationBatch) => {
+    // Simulate running bulk validation
+    setBulkValidationBatches(prevBatches =>
+      prevBatches.map(b =>
+        b.id === batch.id
+          ? { ...b, status: 'IN_PROGRESS' as const }
+          : b
+      )
+    );
+    
+    addNotification('success', `Bulk validation started for ${batch.name}`);
+    
+    // Simulate completion after 3 seconds
+    setTimeout(() => {
+      setBulkValidationBatches(prevBatches =>
+        prevBatches.map(b =>
+          b.id === batch.id
+            ? { 
+                ...b, 
+                status: 'COMPLETED' as const,
+                lastValidated: new Date(),
+                validCount: Math.floor(b.totalCount * 0.8),
+                invalidCount: Math.floor(b.totalCount * 0.15),
+                pendingCount: b.totalCount - Math.floor(b.totalCount * 0.8) - Math.floor(b.totalCount * 0.15)
+              }
+            : b
+        )
+      );
+      addNotification('success', `Bulk validation completed for ${batch.name}`);
+    }, 3000);
+  };
+
+  const handleViewBulkValidationResults = (batch: BulkValidationBatch) => {
+    setSelectedBatchForValidation(batch);
+    setBulkValidationResultsDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Notifications */}
@@ -967,17 +1230,16 @@ const DataFiduciaryDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex w-full flex-wrap justify-start gap-1 p-1">
-            <TabsTrigger value="overview" className="flex-shrink-0">Overview</TabsTrigger>
-            <TabsTrigger value="consent-collection" className="flex-shrink-0">Consent Collection</TabsTrigger>
-            <TabsTrigger value="validation" className="flex-shrink-0">Consent Validation</TabsTrigger>
-            <TabsTrigger value="data-principal" className="flex-shrink-0">Data Principal Requests</TabsTrigger>
-            <TabsTrigger value="grievances" className="flex-shrink-0">Grievance Management</TabsTrigger>
-            <TabsTrigger value="third-party" className="flex-shrink-0">Third-Party Management</TabsTrigger>
-                      <TabsTrigger value="processing" className="flex-shrink-0">Data Processing</TabsTrigger>
-          <TabsTrigger value="compliance" className="flex-shrink-0">Compliance</TabsTrigger>
-          <TabsTrigger value="notices" className="flex-shrink-0">Notice Management</TabsTrigger>
-        </TabsList>
+          <TabsList className="grid w-full grid-cols-8 h-auto">
+            <TabsTrigger value="overview" className="text-xs px-2 py-3">Overview</TabsTrigger>
+            <TabsTrigger value="notices" className="text-xs px-2 py-3">Notice Management</TabsTrigger>
+            <TabsTrigger value="consent-collection" className="text-xs px-2 py-3">Consent Collection</TabsTrigger>
+            <TabsTrigger value="validation" className="text-xs px-2 py-3">Consent Validation</TabsTrigger>
+            <TabsTrigger value="data-principal" className="text-xs px-2 py-3">Data Principal Requests</TabsTrigger>
+            <TabsTrigger value="grievances" className="text-xs px-2 py-3">Grievance Management</TabsTrigger>
+            <TabsTrigger value="third-party" className="text-xs px-2 py-3">Third-Party Management</TabsTrigger>
+            <TabsTrigger value="processing" className="text-xs px-2 py-3">Data Processing</TabsTrigger>
+          </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -1078,14 +1340,26 @@ const DataFiduciaryDashboard = () => {
 
           {/* Consent Validation Tab */}
           <TabsContent value="validation" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Consent Validation Console</h2>
+                <p className="text-gray-600">Validate consent before initiating data processing activities</p>
+              </div>
+              <Button onClick={handleCreateBulkValidation}>
+                <Users className="w-4 h-4 mr-2" />
+                Create Bulk Validation
+              </Button>
+            </div>
+
+            {/* Individual Validation */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-purple-600" />
-                  Consent Validation Console
+                  <Search className="h-5 w-5 text-purple-600" />
+                  Individual Consent Validation
           </CardTitle>
                 <CardDescription>
-                  Validate consent before initiating data processing activities
+                  Validate consent for individual data principals
                 </CardDescription>
         </CardHeader>
               <CardContent>
@@ -1115,6 +1389,97 @@ const DataFiduciaryDashboard = () => {
               </Button>
             </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bulk Validation Batches */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Bulk Validation Batches
+                </CardTitle>
+                <CardDescription>
+                  Manage and monitor bulk consent validation for multiple data principals
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {bulkValidationBatches.map((batch) => (
+                    <div key={batch.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-medium text-gray-900">{batch.name}</h4>
+                            <Badge variant={
+                              batch.status === 'COMPLETED' ? 'default' :
+                              batch.status === 'IN_PROGRESS' ? 'secondary' :
+                              batch.status === 'FAILED' ? 'destructive' : 'outline'
+                            }>
+                              {batch.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">Purpose: {batch.purposeName}</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-600">Total Principals</p>
+                              <p className="font-medium text-lg">{batch.totalCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Valid</p>
+                              <p className="font-medium text-lg text-green-600">{batch.validCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Invalid</p>
+                              <p className="font-medium text-lg text-red-600">{batch.invalidCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Pending</p>
+                              <p className="font-medium text-lg text-orange-600">{batch.pendingCount}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="mb-3">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Validation Progress</span>
+                          <span>{Math.round(((batch.validCount + batch.invalidCount) / batch.totalCount) * 100)}%</span>
+                        </div>
+                        <Progress 
+                          value={((batch.validCount + batch.invalidCount) / batch.totalCount) * 100} 
+                          className="h-2" 
+                        />
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs text-gray-500">
+                          {batch.lastValidated ? `Last validated: ${batch.lastValidated.toLocaleString()}` : 'Not validated yet'}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleRunBulkValidation(batch)}
+                            disabled={batch.status === 'IN_PROGRESS'}
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            {batch.status === 'IN_PROGRESS' ? 'Running...' : 'Run Validation'}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewBulkValidationResults(batch)}
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            View Results
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -1264,11 +1629,27 @@ const DataFiduciaryDashboard = () => {
                         <Progress value={flow.metrics.conversionRate} className="h-2" />
                       </div>
 
+                      {/* Linked Notice Information */}
+                      {flow.linkedNoticeId && (
+                        <div className="bg-green-50 p-3 rounded-md border border-green-200">
+                          <div className="flex items-center gap-2 mb-1">
+                            <FileText className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-800">Linked Notice</span>
+                          </div>
+                          <p className="text-sm text-green-700">{flow.linkedNoticeName}</p>
+                          <p className="text-xs text-green-600">ID: {flow.linkedNoticeId}</p>
+                        </div>
+                      )}
+
                       <div className="flex justify-between items-center pt-2">
                         <div className="text-xs text-gray-500">
                           Updated: {flow.lastUpdated.toLocaleDateString()}
                         </div>
                         <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleManageNoticeLink(flow)}>
+                            <Link className="w-3 h-3 mr-1" />
+                            {flow.linkedNoticeId ? 'Manage Notice' : 'Link Notice'}
+                          </Button>
                           <Button size="sm" variant="outline">
                             <Edit3 className="w-3 h-3 mr-1" />
                             Edit
@@ -1944,58 +2325,6 @@ const DataFiduciaryDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Compliance Tab */}
-          <TabsContent value="compliance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Scale className="h-5 w-5 text-indigo-600" />
-                  DPDP Act 2023 Compliance
-                </CardTitle>
-                <CardDescription>
-                  Monitor compliance status and requirements
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        <h4 className="font-medium text-green-800">Consent Management</h4>
-                      </div>
-                      <p className="text-sm text-green-700">All consent validations follow DPDP requirements</p>
-                    </div>
-                    
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        <h4 className="font-medium text-green-800">Data Processing</h4>
-                      </div>
-                      <p className="text-sm text-green-700">Processing only with valid consent</p>
-                    </div>
-                    
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        <h4 className="font-medium text-green-800">Audit Logging</h4>
-                      </div>
-                      <p className="text-sm text-green-700">Complete immutable audit trail maintained</p>
-                    </div>
-                  </div>
-
-                  <Alert>
-                    <Shield className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Compliance Status:</strong> Your organization is fully compliant with DPDP Act 2023 requirements. 
-                      All consent validations, data processing activities, and audit logging meet regulatory standards.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           {/* Administration Tab */}
           <TabsContent value="administration" className="space-y-6">
             <Card>
@@ -2107,7 +2436,7 @@ const DataFiduciaryDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label>Data Fiduciary</Label>
-                        <Select defaultValue="df_ecommerce">
+                        <Select value={selectedDataFiduciary} onValueChange={setSelectedDataFiduciary}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -2120,17 +2449,16 @@ const DataFiduciaryDashboard = () => {
                       </div>
                       <div>
                         <Label>Notice Language</Label>
-                        <Select defaultValue="english">
+                        <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="english">English</SelectItem>
-                            <SelectItem value="hindi">हिन्दी (Hindi)</SelectItem>
-                            <SelectItem value="bengali">বাংলা (Bengali)</SelectItem>
-                            <SelectItem value="tamil">தமিழ் (Tamil)</SelectItem>
-                            <SelectItem value="telugu">తెలుగు (Telugu)</SelectItem>
-                            <SelectItem value="marathi">मराठी (Marathi)</SelectItem>
+                          <SelectContent className="max-h-60">
+                            {indianLanguages.map(lang => (
+                              <SelectItem key={lang.value} value={lang.value}>
+                                {lang.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -2150,17 +2478,35 @@ const DataFiduciaryDashboard = () => {
                           'Legal Compliance'
                         ].map(purpose => (
                           <div key={purpose} className="flex items-center space-x-2">
-                            <Switch id={purpose} />
+                            <Switch 
+                              id={purpose} 
+                              checked={selectedPurposes.includes(purpose)}
+                              onCheckedChange={() => handlePurposeToggle(purpose)}
+                            />
                             <Label htmlFor={purpose} className="text-sm">{purpose}</Label>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <Button className="w-full">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Generate Dynamic Notice
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button onClick={handleGenerateNotice} className="flex-1">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Generate Dynamic Notice
+                      </Button>
+                      <Button onClick={handleSaveNotice} variant="outline">
+                        <Archive className="h-4 w-4 mr-2" />
+                        Save Notice
+                      </Button>
+                      <Button onClick={() => handleDownloadNotice('pdf')} variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        PDF
+                      </Button>
+                      <Button onClick={() => handleDownloadNotice('docx')} variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        DOCX
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -2263,6 +2609,82 @@ const DataFiduciaryDashboard = () => {
                         </AlertDescription>
                       </Alert>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Generated Notices Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-purple-600" />
+                    Generated Notices
+                  </CardTitle>
+                  <CardDescription>
+                    View and manage all generated consent notices with version control
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Notice ID</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Language</TableHead>
+                          <TableHead>Tagged Consent</TableHead>
+                          <TableHead>Created Time</TableHead>
+                          <TableHead>Version</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {generatedNotices.map((notice) => (
+                          <TableRow key={notice.id}>
+                            <TableCell className="font-mono text-sm">{notice.id}</TableCell>
+                            <TableCell className="font-medium">{notice.title}</TableCell>
+                            <TableCell>{notice.language}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {notice.purposes.slice(0, 2).map((purpose) => (
+                                  <Badge key={purpose} variant="outline" className="text-xs">
+                                    {purpose}
+                                  </Badge>
+                                ))}
+                                {notice.purposes.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{notice.purposes.length - 2} more
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {notice.createdAt.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">v{notice.version}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariantForNotice(notice.status)}>
+                                {notice.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewNotice(notice)}
+                                className="h-8"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
@@ -2530,6 +2952,403 @@ const DataFiduciaryDashboard = () => {
           onClose={() => setHistoryDialogOpen(false)}
           userRole="DATA_FIDUCIARY"
         />
+
+        {/* View Notice Dialog */}
+        <Dialog open={viewNoticeDialogOpen} onOpenChange={setViewNoticeDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-purple-600" />
+                Notice Details - {selectedNotice?.id}
+              </DialogTitle>
+              <DialogDescription>
+                Complete consent notice with DPDP Act 2023 compliance details
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedNotice && (
+              <div className="space-y-6">
+                {/* Notice Metadata */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Notice ID</Label>
+                    <p className="text-sm font-mono">{selectedNotice.id}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Language</Label>
+                    <p className="text-sm">{selectedNotice.language}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Version</Label>
+                    <Badge variant="outline">v{selectedNotice.version}</Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Created</Label>
+                    <p className="text-sm">{selectedNotice.createdAt.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Status</Label>
+                    <Badge variant={getStatusBadgeVariantForNotice(selectedNotice.status)}>
+                      {selectedNotice.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Tagged Purposes */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Tagged Consent Purposes</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedNotice.purposes.map((purpose) => (
+                      <Badge key={purpose} variant="outline" className="text-sm">
+                        {purpose}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Full Notice Content */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Full Notice Content</Label>
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <div className="space-y-6">
+                      {/* Notice Header */}
+                      <div className="text-center border-b pb-4">
+                        <h3 className="text-xl font-bold text-gray-900">{selectedNotice.title}</h3>
+                        <p className="text-sm text-gray-600 mt-1">Your Privacy Rights Under DPDP Act 2023</p>
+                        <div className="flex justify-center gap-2 mt-2">
+                          <Badge variant="outline">ShopEasy E-commerce</Badge>
+                          <Badge variant="outline">{selectedNotice.language}</Badge>
+                          <Badge variant="outline">Version {selectedNotice.version}</Badge>
+                        </div>
+                      </div>
+
+                      {/* Purpose Sections */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Target className="h-4 w-4" />
+                          Purposes of Data Processing
+                        </h4>
+                        <div className="space-y-3">
+                          {selectedNotice.purposes.map((purpose, index) => (
+                            <div key={purpose} className={`p-3 rounded-lg ${
+                              index % 2 === 0 ? 'bg-blue-50' : 'bg-purple-50'
+                            }`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <ShieldCheck className={`h-4 w-4 ${
+                                  index % 2 === 0 ? 'text-blue-600' : 'text-purple-600'
+                                }`} />
+                                <span className={`font-medium ${
+                                  index % 2 === 0 ? 'text-blue-900' : 'text-purple-900'
+                                }`}>{purpose}</span>
+                                <Badge className={`text-xs ${
+                                  index % 2 === 0 ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                                }`}>
+                                  Purpose ID: {purpose.replace(/\s+/g, '_').toUpperCase()}_00{index + 1}
+                                </Badge>
+                              </div>
+                              <p className={`text-sm ${
+                                index % 2 === 0 ? 'text-blue-800' : 'text-purple-800'
+                              }`}>
+                                Processing for {purpose.toLowerCase()} as per your consent
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Rights Section */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Scale className="h-4 w-4" />
+                          Your Rights Under DPDP Act 2023
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to access your data
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to correct data
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to erase data
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to data portability
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="bg-gray-100 p-3 rounded-lg">
+                        <h4 className="font-semibold text-gray-900 mb-2">Contact Information</h4>
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <p>Data Protection Officer: dpo@shopeasy.com</p>
+                          <p>Grievance Officer: grievance@shopeasy.com</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-between items-center pt-4 border-t">
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => handleDownloadNotice('pdf')}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF
+                    </Button>
+                    <Button variant="outline" onClick={() => handleDownloadNotice('docx')}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download DOCX
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setViewNoticeDialogOpen(false)}>
+                      Close
+                    </Button>
+                    <Button onClick={handleSaveNotice}>
+                      <Archive className="w-4 h-4 mr-2" />
+                      Save Notice
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Notice Linking Dialog */}
+        <Dialog open={noticeLinkingDialogOpen} onOpenChange={setNoticeLinkingDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Manage Notice Link</DialogTitle>
+              <DialogDescription>
+                Link or update the notice associated with this consent collection flow
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedFlowForLinking && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Consent Collection Flow</Label>
+                  <p className="text-lg font-medium text-gray-900">{selectedFlowForLinking.name}</p>
+                  <p className="text-sm text-gray-600">{selectedFlowForLinking.description}</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="notice-selection">Select Notice to Link</Label>
+                  <Select value={selectedNoticeForLinking} onValueChange={setSelectedNoticeForLinking}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a notice to link" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generatedNotices.map((notice) => (
+                        <SelectItem key={notice.id} value={notice.id}>
+                          {notice.id} - {notice.language === 'english' ? 'E-commerce' : 'बैंकिंग'} Data Processing Notice
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedFlowForLinking.linkedNoticeId && (
+                  <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Currently Linked Notice</span>
+                    </div>
+                    <p className="text-sm text-blue-700">{selectedFlowForLinking.linkedNoticeName}</p>
+                    <p className="text-xs text-blue-600">ID: {selectedFlowForLinking.linkedNoticeId}</p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setNoticeLinkingDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleLinkNoticeToFlow} disabled={!selectedNoticeForLinking}>
+                    <Link className="h-4 w-4 mr-2" />
+                    {selectedFlowForLinking.linkedNoticeId ? 'Update Link' : 'Link Notice'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Validation Creation Dialog */}
+        <Dialog open={bulkValidationDialogOpen} onOpenChange={setBulkValidationDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Bulk Validation Batch</DialogTitle>
+              <DialogDescription>
+                Set up a new bulk consent validation for multiple data principals
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="batch-name">Batch Name</Label>
+                <Input id="batch-name" placeholder="e.g., Q1 2024 Marketing Validation" />
+              </div>
+
+              <div>
+                <Label htmlFor="purpose-selection">Processing Purpose</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select processing purpose" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="marketing_001">Marketing Campaign</SelectItem>
+                    <SelectItem value="analytics_001">User Analytics</SelectItem>
+                    <SelectItem value="service_001">Service Delivery</SelectItem>
+                    <SelectItem value="account_001">Account Management</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="data-principals">Data Principals (Upload CSV or Enter Manually)</Label>
+                <Textarea 
+                  id="data-principals" 
+                  placeholder="Enter email addresses separated by commas or upload a CSV file"
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setBulkValidationDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  addNotification('success', 'Bulk validation batch created successfully');
+                  setBulkValidationDialogOpen(false);
+                }}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Create Batch
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Validation Results Dialog */}
+        <Dialog open={bulkValidationResultsDialogOpen} onOpenChange={setBulkValidationResultsDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Bulk Validation Results - {selectedBatchForValidation?.name}</DialogTitle>
+              <DialogDescription>
+                Detailed results of the bulk consent validation process
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedBatchForValidation && (
+              <div className="space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-gray-900">{selectedBatchForValidation.totalCount}</p>
+                        <p className="text-sm text-gray-600">Total Principals</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">{selectedBatchForValidation.validCount}</p>
+                        <p className="text-sm text-gray-600">Valid Consents</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-red-600">{selectedBatchForValidation.invalidCount}</p>
+                        <p className="text-sm text-gray-600">Invalid Consents</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-orange-600">{selectedBatchForValidation.pendingCount}</p>
+                        <p className="text-sm text-gray-600">Pending</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Detailed Results Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Individual Validation Results</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data Principal</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Consent Status</TableHead>
+                          <TableHead>Last Validated</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedBatchForValidation.dataPrincipals.map((principal) => (
+                          <TableRow key={principal.userId}>
+                            <TableCell className="font-medium">{principal.name}</TableCell>
+                            <TableCell>{principal.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                principal.consentStatus === ConsentStatus.GRANTED ? 'default' :
+                                principal.consentStatus === ConsentStatus.PENDING ? 'secondary' :
+                                principal.consentStatus === ConsentStatus.EXPIRED ? 'outline' : 'destructive'
+                              }>
+                                {principal.consentStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {principal.lastValidated ? 
+                                principal.lastValidated.toLocaleDateString() : 
+                                'Never'
+                              }
+                            </TableCell>
+                            <TableCell>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-3 h-3 mr-1" />
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setBulkValidationResultsDialogOpen(false)}>
+                    Close
+                  </Button>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Results
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

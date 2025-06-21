@@ -174,8 +174,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           </div>
           <h2 className="text-xl text-gray-700 font-medium">Consent Management System</h2>
           <p className="text-gray-600 mt-3">
-            Advanced privacy controls with comprehensive consent management,
-            and regulatory adherence under Comply Ark's prototype framework.
+          Prototype Developed by Comply Ark.
           </p>
         </div>
 
