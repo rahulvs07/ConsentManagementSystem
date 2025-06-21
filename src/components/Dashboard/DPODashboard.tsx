@@ -59,11 +59,13 @@ import {
   Flag,
   UserX,
   Building,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  History as HistoryIcon
 } from 'lucide-react';
 
 // Import types from dpdp.ts
-import { GrievanceTicket, GrievanceStatus, GrievancePriority, GrievanceCategory } from '@/types/dpdp';
+import { GrievanceTicket, GrievanceStatus, GrievancePriority, GrievanceCategory, DataPrincipalRequestWithHistory } from '@/types/dpdp';
+import ActivityHistory from '@/components/ui/activity-history';
 
 interface ComplianceMetric {
   id: string;
@@ -144,6 +146,22 @@ interface EscalatedGrievance extends GrievanceTicket {
   slaBreached: boolean;
   regulatoryRisk: 'low' | 'medium' | 'high';
   businessImpact: string;
+}
+
+interface EscalatedDataPrincipalRequest extends DataPrincipalRequestWithHistory {
+  escalationReason: string;
+  originalAssignee: string;
+  escalatedBy: string;
+  escalatedAt: Date;
+  slaBreached: boolean;
+  regulatoryRisk: 'low' | 'medium' | 'high';
+  businessImpact: string;
+  communicationLog: Array<{
+    timestamp: Date;
+    type: 'EMAIL' | 'PHONE' | 'SYSTEM';
+    message: string;
+    sentBy: string;
+  }>;
 }
 
 interface IncidentCreationForm {
@@ -380,11 +398,89 @@ const DPODashboard = () => {
     }
   ]);
 
+  const [escalatedDataPrincipalRequests, setEscalatedDataPrincipalRequests] = useState<EscalatedDataPrincipalRequest[]>([
+    {
+      id: 'DPR-ESC-001',
+      referenceNumber: 'GRV-20251105-007',
+      userId: 'UID1234',
+      userEmail: 'jane.doe@example.com',
+      userName: 'Jane Doe',
+      requestType: 'ACCESS',
+      status: 'ESCALATED',
+      priority: 'HIGH',
+      submittedAt: new Date(Date.now() - 54 * 60 * 60 * 1000), // 54 hours ago
+      dueDate: new Date(Date.now() + 18 * 60 * 60 * 1000), // 18 hours from now
+      description: 'Request for all personal data processed by the organization including marketing preferences and analytics data.',
+      relatedConsents: ['P-002'],
+      assignedTo: 'dpo@company.com',
+      documents: ['screenshot_unsub.png'],
+      escalationReason: 'SLA breach - 48 hours exceeded without resolution',
+      originalAssignee: 'data-team@company.com',
+      escalatedBy: 'system-auto',
+      escalatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+      slaBreached: true,
+      regulatoryRisk: 'high',
+      businessImpact: 'Potential DPDP Act Section 11 violation, regulatory penalties possible',
+      communicationLog: [
+        {
+          timestamp: new Date(Date.now() - 54 * 60 * 60 * 1000),
+          type: 'SYSTEM',
+          message: 'Data access request received and acknowledged',
+          sentBy: 'System'
+        },
+        {
+          timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000),
+          type: 'EMAIL',
+          message: 'Initial assessment completed - complex request requiring manual review',
+          sentBy: 'data-team@company.com'
+        },
+        {
+          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+          type: 'SYSTEM',
+          message: 'Request escalated to DPO due to SLA breach',
+          sentBy: 'System'
+        }
+      ],
+      history: {
+        requestId: 'DPR-ESC-001',
+        referenceNumber: 'GRV-20251105-007',
+        requestType: 'ACCESS',
+        activities: [],
+        createdAt: new Date(Date.now() - 54 * 60 * 60 * 1000),
+        lastUpdated: new Date(Date.now() - 6 * 60 * 60 * 1000),
+        totalActivities: 5,
+        statusChangeCount: 2,
+        assignmentChangeCount: 1,
+        communicationCount: 3,
+        slaBreachCount: 1,
+        processingMilestones: {
+          received: new Date(Date.now() - 54 * 60 * 60 * 1000),
+          validated: new Date(Date.now() - 50 * 60 * 60 * 1000),
+          inProgress: new Date(Date.now() - 48 * 60 * 60 * 1000)
+        }
+      },
+      lastActivityAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      activitySummary: {
+        totalActivities: 5,
+        recentActivity: 'Escalated to DPO due to SLA breach',
+        nextAction: 'DPO review and decision required',
+        daysActive: 3,
+        slaStatus: 'BREACHED'
+      }
+    }
+  ]);
+
   const [selectedIncident, setSelectedIncident] = useState<DetailedIncident | null>(null);
   const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
   const [createIncidentDialogOpen, setCreateIncidentDialogOpen] = useState(false);
   const [grievanceEscalationDialogOpen, setGrievanceEscalationDialogOpen] = useState(false);
   const [selectedEscalatedGrievance, setSelectedEscalatedGrievance] = useState<EscalatedGrievance | null>(null);
+  
+  // History dialog states
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyEntityType, setHistoryEntityType] = useState<'GRIEVANCE' | 'DATA_REQUEST'>('GRIEVANCE');
+  const [historyEntityId, setHistoryEntityId] = useState<string>('');
+  const [historyReferenceNumber, setHistoryReferenceNumber] = useState<string>('');
   
   const [newIncident, setNewIncident] = useState<IncidentCreationForm>({
     type: 'consent_violation',
@@ -460,6 +556,13 @@ const DPODashboard = () => {
   const [parentalConsentDialogOpen, setParentalConsentDialogOpen] = useState(false);
   const [parentalConsentDecision, setParentalConsentDecision] = useState<'APPROVED' | 'REJECTED' | ''>('');
   const [parentalConsentComments, setParentalConsentComments] = useState('');
+
+  // New state for escalated requests functionality
+  const [escalatedRequestsActiveTab, setEscalatedRequestsActiveTab] = useState('grievances');
+  const [selectedEscalatedDPR, setSelectedEscalatedDPR] = useState<EscalatedDataPrincipalRequest | null>(null);
+  const [dprEscalationDialogOpen, setDprEscalationDialogOpen] = useState(false);
+  const [dpoDecision, setDpoDecision] = useState<'APPROVE' | 'REQUEST_INFO' | ''>('');
+  const [dpoComments, setDpoComments] = useState('');
 
   const getStatusBadge = (status: string, type: 'compliance' | 'incident' | 'policy' | 'training' = 'compliance') => {
     const variants = {
@@ -651,6 +754,53 @@ const DPODashboard = () => {
     }
   };
 
+  // New handler functions for escalated DPR requests
+  const handleDPREscalationReview = (request: EscalatedDataPrincipalRequest) => {
+    setSelectedEscalatedDPR(request);
+    setDprEscalationDialogOpen(true);
+  };
+
+  const handleShowDPRHistory = (request: EscalatedDataPrincipalRequest) => {
+    setHistoryEntityType('DATA_REQUEST');
+    setHistoryEntityId(request.id);
+    setHistoryReferenceNumber(request.referenceNumber);
+    setHistoryDialogOpen(true);
+  };
+
+  const handleDPODecision = async () => {
+    if (!selectedEscalatedDPR || !dpoDecision || !dpoComments) {
+      alert('Please provide all required information for the decision');
+      return;
+    }
+
+    // Update the request based on DPO decision
+    const updatedRequest: EscalatedDataPrincipalRequest = {
+      ...selectedEscalatedDPR,
+      status: dpoDecision === 'APPROVE' ? 'IN_PROGRESS' : 'SUBMITTED',
+      communicationLog: [
+        ...selectedEscalatedDPR.communicationLog,
+        {
+          timestamp: new Date(),
+          type: 'SYSTEM' as const,
+          message: `DPO Decision: ${dpoDecision}. Comments: ${dpoComments}`,
+          sentBy: 'DPO'
+        }
+      ]
+    };
+
+    setEscalatedDataPrincipalRequests(prev => 
+      prev.map(req => req.id === selectedEscalatedDPR.id ? updatedRequest : req)
+    );
+
+    setDprEscalationDialogOpen(false);
+    setSelectedEscalatedDPR(null);
+    setDpoDecision('');
+    setDpoComments('');
+
+    // Simulate sending notification
+    alert(`Decision recorded. Notification sent to data principal (${selectedEscalatedDPR.userEmail}) and assigned team.`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Enhanced Header */}
@@ -719,11 +869,11 @@ const DPODashboard = () => {
           <NavigationTab 
             value="grievances" 
             icon={<Flag className="h-4 w-4" />}
-            notificationCount={escalatedGrievances.filter(g => g.status === GrievanceStatus.ESCALATED).length}
+            notificationCount={escalatedGrievances.filter(g => g.status === GrievanceStatus.ESCALATED).length + escalatedDataPrincipalRequests.filter(r => r.status === 'ESCALATED').length}
             notificationVariant="destructive"
             isCompact={true}
           >
-            Grievances
+            Escalated Requests
           </NavigationTab>
           
           <NavigationTab 
@@ -1088,10 +1238,10 @@ const DPODashboard = () => {
           </div>
         </TabsContent>
 
-        {/* Escalated Grievances Tab - BRD Section 4.5 Compliant */}
+        {/* Escalated Requests Tab - BRD Section 4.5 Compliant */}
         <TabsContent value="grievances" className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Escalated Grievances Management</h3>
+            <h3 className="text-lg font-medium">Escalated Requests Management</h3>
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="text-sm">
                 SLA: 48 hours resolution
@@ -1103,74 +1253,180 @@ const DPODashboard = () => {
             </div>
           </div>
 
-          {/* Escalated Grievances Alert */}
-          {escalatedGrievances.filter(g => g.slaBreached).length > 0 && (
+          {/* Escalated Requests Alert */}
+          {(escalatedGrievances.filter(g => g.slaBreached).length > 0 || escalatedDataPrincipalRequests.filter(r => r.slaBreached).length > 0) && (
             <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
-                <strong>{escalatedGrievances.filter(g => g.slaBreached).length} grievances</strong> have breached SLA requirements. 
+                <strong>{escalatedGrievances.filter(g => g.slaBreached).length + escalatedDataPrincipalRequests.filter(r => r.slaBreached).length} requests</strong> have breached SLA requirements. 
                 Immediate DPO intervention required to prevent regulatory non-compliance.
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="space-y-4">
-            {escalatedGrievances.map((grievance) => (
-              <Card key={grievance.id} className={`${grievance.slaBreached ? 'border-red-200 bg-red-50' : 'border-orange-200 bg-orange-50'}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-medium">{grievance.subject}</h4>
-                        <Badge className={`${grievance.priority === GrievancePriority.HIGH ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {grievance.priority}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {grievance.category.replace('_', ' ')}
-                        </Badge>
-                        <Badge className={`${grievance.regulatoryRisk === 'high' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {grievance.regulatoryRisk} risk
-                        </Badge>
-                        {grievance.slaBreached && (
-                          <Badge variant="destructive" className="text-xs">
-                            <Clock className="h-3 w-3 mr-1" />
-                            SLA Breached
+          {/* Sub-tabs for Grievances and Data Principal Requests */}
+          <Tabs value={escalatedRequestsActiveTab} onValueChange={setEscalatedRequestsActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <NavigationTab 
+                value="grievances"
+                icon={<Flag className="h-4 w-4" />}
+                notificationCount={escalatedGrievances.filter(g => g.status === GrievanceStatus.ESCALATED).length}
+                notificationVariant="destructive"
+                isCompact={true}
+              >
+                Escalated Grievances ({escalatedGrievances.length})
+              </NavigationTab>
+              <NavigationTab 
+                value="data-requests"
+                icon={<FileText className="h-4 w-4" />}
+                notificationCount={escalatedDataPrincipalRequests.filter(r => r.status === 'ESCALATED').length}
+                notificationVariant="destructive"
+                isCompact={true}
+              >
+                Escalated DPR ({escalatedDataPrincipalRequests.length})
+              </NavigationTab>
+            </TabsList>
+
+            {/* Escalated Grievances Sub-tab */}
+            <TabsContent value="grievances" className="space-y-4 mt-4">
+              {escalatedGrievances.map((grievance) => (
+                <Card key={grievance.id} className={`${grievance.slaBreached ? 'border-red-200 bg-red-50' : 'border-orange-200 bg-orange-50'}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h4 className="font-medium">{grievance.subject}</h4>
+                          <Badge className={`${grievance.priority === GrievancePriority.HIGH ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            {grievance.priority}
                           </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {grievance.category.replace('_', ' ')}
+                          </Badge>
+                          <Badge className={`${grievance.regulatoryRisk === 'high' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            {grievance.regulatoryRisk} risk
+                          </Badge>
+                          {grievance.slaBreached && (
+                            <Badge variant="destructive" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              SLA Breached
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{grievance.description}</p>
+                        <div className="text-sm text-gray-700 mb-2">
+                          <strong>Escalation Reason:</strong> {grievance.escalationReason}
+                        </div>
+                        <div className="text-sm text-gray-700 mb-2">
+                          <strong>Business Impact:</strong> {grievance.businessImpact}
+                        </div>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>Ref: {grievance.referenceNumber}</span>
+                          <span>Escalated: {new Date(grievance.escalatedAt).toLocaleString()}</span>
+                          <span>Original Assignee: {grievance.originalAssignee}</span>
+                          <span>Due: {grievance.dueDate && new Date(grievance.dueDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleGrievanceEscalationReview(grievance)}>
+                          <Eye className="h-3 w-3 mr-1" />
+                          Review
+                        </Button>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Resolve
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Send className="h-3 w-3 mr-1" />
+                          Contact
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+
+            {/* Escalated Data Principal Requests Sub-tab */}
+            <TabsContent value="data-requests" className="space-y-4 mt-4">
+              {escalatedDataPrincipalRequests.map((request) => (
+                <Card key={request.id} className={`${request.slaBreached ? 'border-red-200 bg-red-50' : 'border-orange-200 bg-orange-50'}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h4 className="font-medium">Data {request.requestType} Request</h4>
+                          <Badge className={`${request.priority === 'HIGH' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            {request.priority}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {request.requestType}
+                          </Badge>
+                          <Badge className={`${request.regulatoryRisk === 'high' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            {request.regulatoryRisk} risk
+                          </Badge>
+                          {request.slaBreached && (
+                            <Badge variant="destructive" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              SLA Breached
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{request.description}</p>
+                        <div className="text-sm text-gray-700 mb-2">
+                          <strong>Principal:</strong> {request.userName} ({request.userId})
+                        </div>
+                        <div className="text-sm text-gray-700 mb-2">
+                          <strong>Escalation Reason:</strong> {request.escalationReason}
+                        </div>
+                        <div className="text-sm text-gray-700 mb-2">
+                          <strong>Business Impact:</strong> {request.businessImpact}
+                        </div>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>Ref: {request.referenceNumber}</span>
+                          <span>Submitted: {new Date(request.submittedAt).toLocaleString()}</span>
+                          <span>Escalated: {new Date(request.escalatedAt).toLocaleString()}</span>
+                          <span>Due: {new Date(request.dueDate).toLocaleDateString()}</span>
+                        </div>
+                        {request.documents.length > 0 && (
+                          <div className="text-sm text-gray-700 mt-2">
+                            <strong>Attachments:</strong>
+                            <div className="flex items-center space-x-2 mt-1">
+                              {request.documents.map((doc, index) => (
+                                <div key={index} className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded text-xs">
+                                  <FileText className="h-3 w-3" />
+                                  <span>{doc}</span>
+                                  <Button size="sm" variant="ghost" className="h-4 w-4 p-0">
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-4 w-4 p-0">
+                                    <Download className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{grievance.description}</p>
-                      <div className="text-sm text-gray-700 mb-2">
-                        <strong>Escalation Reason:</strong> {grievance.escalationReason}
-                      </div>
-                      <div className="text-sm text-gray-700 mb-2">
-                        <strong>Business Impact:</strong> {grievance.businessImpact}
-                      </div>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <span>Ref: {grievance.referenceNumber}</span>
-                        <span>Escalated: {new Date(grievance.escalatedAt).toLocaleString()}</span>
-                        <span>Original Assignee: {grievance.originalAssignee}</span>
-                        <span>Due: {grievance.dueDate && new Date(grievance.dueDate).toLocaleDateString()}</span>
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleDPREscalationReview(request)}>
+                          <Eye className="h-3 w-3 mr-1" />
+                          Review
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleShowDPRHistory(request)}>
+                          <HistoryIcon className="h-3 w-3 mr-1" />
+                          History
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Send className="h-3 w-3 mr-1" />
+                          Contact
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => handleGrievanceEscalationReview(grievance)}>
-                        <Eye className="h-3 w-3 mr-1" />
-                        Review
-                      </Button>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Resolve
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Send className="h-3 w-3 mr-1" />
-                        Contact
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Parental Consent Approvals */}
@@ -1771,11 +2027,27 @@ const DPODashboard = () => {
             </div>
           )}
           
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setGrievanceEscalationDialogOpen(false)}>Cancel</Button>
-            <Button onClick={() => resolveEscalatedGrievance(selectedEscalatedGrievance?.id || '', 'DPO Resolution provided')} className="bg-green-600 hover:bg-green-700 text-white">
-              Mark as Resolved
+          <div className="flex justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (selectedEscalatedGrievance) {
+                  setHistoryDialogOpen(true);
+                  setHistoryEntityType('GRIEVANCE');
+                  setHistoryEntityId(selectedEscalatedGrievance.id);
+                  setHistoryReferenceNumber(selectedEscalatedGrievance.referenceNumber);
+                }
+              }}
+            >
+              <HistoryIcon className="h-4 w-4 mr-2" />
+              History
             </Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => setGrievanceEscalationDialogOpen(false)}>Cancel</Button>
+              <Button onClick={() => resolveEscalatedGrievance(selectedEscalatedGrievance?.id || '', 'DPO Resolution provided')} className="bg-green-600 hover:bg-green-700 text-white">
+                Mark as Resolved
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -2263,6 +2535,16 @@ const DPODashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Activity History Dialog */}
+      <ActivityHistory
+        entityType={historyEntityType}
+        entityId={historyEntityId}
+        referenceNumber={historyReferenceNumber}
+        isOpen={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
+        userRole="DPO"
+      />
     </div>
   );
 };

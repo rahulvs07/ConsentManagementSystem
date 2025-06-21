@@ -27,8 +27,9 @@ import { ConsentTemplateManager } from '@/components/Admin/ConsentTemplateManage
 import { CategoryPurposeManager } from '@/components/Admin/CategoryPurposeManager';
 import { SMTPNotificationSettings } from '@/components/Admin/SMTPNotificationSettings';
 import { DataRetentionPolicies } from '@/components/Admin/DataRetentionPolicies';
-import { AuditLogViewer } from '@/components/Admin/AuditLogViewer';
+import AuditLogViewer from '@/components/Admin/AuditLogViewer';
 import { IntegrationAPISettings } from '@/components/Admin/IntegrationAPISettings';
+import NoticeHistoryViewer from '@/components/Admin/NoticeHistoryViewer';
 
 interface SystemHealthStatus {
   cmsConnection: 'healthy' | 'warning' | 'error';
@@ -179,6 +180,10 @@ const AdministratorDashboard: React.FC = () => {
           <TabsTrigger value="categories" className="flex items-center gap-2">
             <Tag className="h-4 w-4" />
             Categories
+          </TabsTrigger>
+          <TabsTrigger value="notices" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Notice History
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
@@ -367,6 +372,11 @@ const AdministratorDashboard: React.FC = () => {
           <CategoryPurposeManager />
         </TabsContent>
 
+        {/* NEW: Notice History Tab */}
+        <TabsContent value="notices">
+          <NoticeHistoryViewer />
+        </TabsContent>
+
         {/* SMTP/Notification Settings Tab */}
         <TabsContent value="notifications">
           <SMTPNotificationSettings />
@@ -377,9 +387,9 @@ const AdministratorDashboard: React.FC = () => {
           <DataRetentionPolicies />
         </TabsContent>
 
-        {/* Audit Log Viewer Tab */}
+        {/* Audit Logs Tab */}
         <TabsContent value="audit">
-          <AuditLogViewer />
+          <AuditLogViewer userRole="system_admin" userId="admin_001" />
         </TabsContent>
 
         {/* Integration & API Settings Tab */}

@@ -7,6 +7,7 @@ import {
   ProcessingPurpose,
   ConsentStatus,
   ConsentArtifact,
+  NoticeArtifact,
   AuditEntry,
   AuditAction
 } from '@/types/dpdp';
@@ -185,6 +186,115 @@ export class ConsentManagementService {
     } catch (error) {
       console.error('Error fetching consent history:', error);
       throw new Error('Failed to fetch consent history');
+    }
+  }
+
+  // 6. Notice Artifact Storage (BRD Critical Requirement)
+  async saveNoticeArtifact(
+    consentArtifactId: string,
+    templateId: string,
+    templateVersion: string,
+    renderedHtml: string,
+    renderedPlainText: string,
+    languageUsed: string,
+    purposeIds: string[],
+    dataCategories: string[],
+    userType: 'adult' | 'minor',
+    metadata: {
+      ipAddress: string;
+      userAgent: string;
+      sessionId: string;
+      deviceFingerprint?: string;
+      screenResolution?: string;
+    }
+  ): Promise<NoticeArtifact> {
+    try {
+      const noticeArtifact: NoticeArtifact = {
+        id: `notice_artifact_${Date.now()}`,
+        consentArtifactId,
+        templateId,
+        templateVersion,
+        renderedHtml,
+        renderedPlainText,
+        languageUsed,
+        purposeIds,
+        dataCategories,
+        userType,
+        createdOn: new Date(),
+        integrity: {
+          hash: this.generateHash(renderedHtml + renderedPlainText + templateVersion),
+          algorithm: 'SHA-256',
+          verificationStatus: 'verified'
+        },
+        metadata
+      };
+
+      // Simulate API call to store notice artifact
+      await this.simulateApiCall({
+        endpoint: `${this.baseUrl}/notice-artifacts`,
+        method: 'POST',
+        data: noticeArtifact
+      });
+
+      // Log the storage action
+      await this.auditLogger.log({
+        action: AuditAction.NOTICE_ARTIFACT_STORED,
+        userId: 'system',
+        details: {
+          noticeArtifactId: noticeArtifact.id,
+          consentArtifactId,
+          templateId,
+          templateVersion,
+          languageUsed
+        }
+      });
+
+      return noticeArtifact;
+    } catch (error) {
+      console.error('Error saving notice artifact:', error);
+      throw new Error('Failed to save notice artifact');
+    }
+  }
+
+  // 7. Retrieve Notice Artifact (For History & Audit)
+  async getNoticeArtifact(artifactId: string): Promise<NoticeArtifact> {
+    try {
+      const response = await this.simulateApiCall<NoticeArtifact>({
+        endpoint: `${this.baseUrl}/notice-artifacts/${artifactId}`,
+        method: 'GET'
+      });
+
+      // Log the retrieval action
+      await this.auditLogger.log({
+        action: AuditAction.NOTICE_ARTIFACT_RETRIEVED,
+        userId: 'system',
+        details: {
+          noticeArtifactId: artifactId,
+          retrievedAt: new Date()
+        }
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Error retrieving notice artifact:', error);
+      throw new Error('Failed to retrieve notice artifact');
+    }
+  }
+
+  // 8. Link Consent Artifact to Notice Artifact
+  async linkConsentToNoticeArtifact(
+    consentArtifactId: string,
+    noticeArtifactId: string
+  ): Promise<void> {
+    try {
+      await this.simulateApiCall({
+        endpoint: `${this.baseUrl}/consent-artifacts/${consentArtifactId}/link-notice`,
+        method: 'PATCH',
+        data: { noticeArtifactId }
+      });
+    } catch (error) {
+      console.error('Error linking consent to notice artifact:', error);
+      throw new Error('Failed to link consent to notice artifact');
     }
   }
 

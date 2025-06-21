@@ -131,6 +131,7 @@ export interface ConsentNoticeTranslation {
 export enum NoticeStatus {
   DRAFT = 'draft',
   IN_TRANSLATION = 'in_translation',
+  PENDING_APPROVAL = 'pending_approval',
   PUBLISHED = 'published',
   ARCHIVED = 'archived'
 }
@@ -237,6 +238,13 @@ export enum AuditAction {
   DATA_REQUEST_NOTIFICATION_SENT = 'data_request_notification_sent',
   NOTICE_CREATED = 'notice_created',
   NOTICE_PUBLISHED = 'notice_published',
+  NOTICE_DRAFT_SAVED = 'notice_draft_saved',
+  NOTICE_SUBMITTED_FOR_APPROVAL = 'notice_submitted_for_approval',
+  NOTICE_APPROVED = 'notice_approved',
+  NOTICE_REJECTED = 'notice_rejected',
+  NOTICE_ARTIFACT_STORED = 'notice_artifact_stored',
+  NOTICE_ARTIFACT_RETRIEVED = 'notice_artifact_retrieved',
+  NOTICE_TEMPLATE_VERSION_UPDATED = 'notice_template_version_updated',
   USER_LOGIN = 'user_login',
   USER_LOGOUT = 'user_logout',
   SYSTEM_CONFIG_CHANGED = 'system_config_changed'
@@ -332,6 +340,11 @@ export interface ConsentTemplate {
   createdAt: Date;
   lastUpdated: Date;
   version: string;
+  status?: NoticeStatus;
+  approvedBy?: string;
+  approvedAt?: Date;
+  publishedBy?: string;
+  publishedAt?: Date;
 }
 
 export enum TemplateType {
@@ -515,6 +528,7 @@ export interface ConsentArtifact {
   consentId: string;
   userId: string;
   noticeGenerationId: string;
+  noticeArtifactId?: string; // Link to the rendered notice
   purposeTags: PurposeTag[];
   consentDecisions: ConsentDecision[];
   metadata: ConsentArtifactMetadata;
@@ -575,6 +589,33 @@ export interface IntegrityVerification {
   publicKey?: string;
   blockchainHash?: string;
   verificationStatus: 'verified' | 'failed' | 'pending';
+}
+
+// Notice Artifact Storage (BRD Critical Requirement)
+export interface NoticeArtifact {
+  id: string;
+  consentArtifactId: string;
+  templateId: string;
+  templateVersion: string;
+  renderedHtml: string;
+  renderedPlainText: string;
+  languageUsed: string;
+  purposeIds: string[];
+  dataCategories: string[];
+  userType: 'adult' | 'minor';
+  createdOn: Date;
+  integrity: {
+    hash: string;
+    algorithm: 'SHA-256' | 'SHA-512';
+    verificationStatus: 'verified' | 'failed' | 'pending';
+  };
+  metadata: {
+    ipAddress: string;
+    userAgent: string;
+    sessionId: string;
+    deviceFingerprint?: string;
+    screenResolution?: string;
+  };
 }
 
 // Administrative configuration
@@ -695,4 +736,146 @@ export interface ConsentWorkflowState {
   submissionStatus: 'IDLE' | 'SUBMITTING' | 'SUCCESS' | 'ERROR';
   artifactId?: string;
   nextAction?: 'REDIRECT' | 'REFRESH' | 'CONTINUE';
+}
+
+// History Tracking System for Grievances and Data Principal Requests
+export interface ActivityHistoryEntry {
+  id: string;
+  timestamp: Date;
+  activityType: 'STATUS_CHANGE' | 'ASSIGNMENT_CHANGE' | 'PRIORITY_CHANGE' | 'UPDATE' | 'COMMENT' | 'DOCUMENT_UPLOAD' | 'ESCALATION' | 'RESOLUTION' | 'COMMUNICATION';
+  actor: {
+    id: string;
+    name: string;
+    role: 'DATA_PRINCIPAL' | 'DPO' | 'DATA_FIDUCIARY' | 'DATA_PROCESSOR' | 'SYSTEM_ADMIN' | 'SYSTEM';
+    email?: string;
+  };
+  changes: {
+    field: string;
+    oldValue: string | null;
+    newValue: string | null;
+  }[];
+  description: string;
+  notes?: string;
+  metadata: {
+    ipAddress?: string;
+    userAgent?: string;
+    sessionId?: string;
+    source: 'WEB_UI' | 'API' | 'SYSTEM' | 'EMAIL' | 'PHONE';
+    automaticAction: boolean;
+  };
+  attachments?: {
+    fileName: string;
+    fileSize: number;
+    uploadedAt: Date;
+    uploadedBy: string;
+  }[];
+  visibility: 'PUBLIC' | 'INTERNAL' | 'DPO_ONLY' | 'SYSTEM_ONLY';
+  relatedEntities?: {
+    type: 'CONSENT' | 'USER' | 'POLICY' | 'INCIDENT';
+    id: string;
+    name: string;
+  }[];
+}
+
+export interface GrievanceHistory {
+  grievanceId: string;
+  referenceNumber: string;
+  activities: ActivityHistoryEntry[];
+  createdAt: Date;
+  lastUpdated: Date;
+  totalActivities: number;
+  statusChangeCount: number;
+  assignmentChangeCount: number;
+  communicationCount: number;
+  escalationCount: number;
+}
+
+export interface DataPrincipalRequestHistory {
+  requestId: string;
+  referenceNumber: string;
+  requestType: 'ACCESS' | 'CORRECTION' | 'ERASURE' | 'PORTABILITY' | 'OBJECTION' | 'NOMINATION';
+  activities: ActivityHistoryEntry[];
+  createdAt: Date;
+  lastUpdated: Date;
+  totalActivities: number;
+  statusChangeCount: number;
+  assignmentChangeCount: number;
+  communicationCount: number;
+  slaBreachCount: number;
+  processingMilestones: {
+    received: Date;
+    validated?: Date;
+    inProgress?: Date;
+    completed?: Date;
+    rejected?: Date;
+  };
+}
+
+// Enhanced interfaces with history tracking
+export interface GrievanceTicketWithHistory extends GrievanceTicket {
+  history: GrievanceHistory;
+  lastActivityAt: Date;
+  activitySummary: {
+    totalActivities: number;
+    recentActivity: string;
+    nextAction?: string;
+    daysActive: number;
+  };
+}
+
+export interface DataPrincipalRequestWithHistory {
+  id: string;
+  referenceNumber: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  requestType: 'ACCESS' | 'CORRECTION' | 'ERASURE' | 'PORTABILITY' | 'OBJECTION' | 'NOMINATION';
+  status: 'SUBMITTED' | 'IN_PROGRESS' | 'FULFILLED' | 'REJECTED' | 'ESCALATED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  submittedAt: Date;
+  dueDate: Date;
+  fulfilledAt?: Date;
+  description: string;
+  relatedConsents: string[];
+  assignedTo?: string;
+  documents: string[];
+  history: DataPrincipalRequestHistory;
+  lastActivityAt: Date;
+  activitySummary: {
+    totalActivities: number;
+    recentActivity: string;
+    nextAction?: string;
+    daysActive: number;
+    slaStatus: 'ON_TIME' | 'AT_RISK' | 'BREACHED';
+  };
+}
+
+// History Service Interface
+export interface HistoryService {
+  addActivity(
+    entityType: 'GRIEVANCE' | 'DATA_REQUEST',
+    entityId: string,
+    activity: Omit<ActivityHistoryEntry, 'id' | 'timestamp'>
+  ): Promise<ActivityHistoryEntry>;
+  
+  getHistory(
+    entityType: 'GRIEVANCE' | 'DATA_REQUEST',
+    entityId: string,
+    filters?: {
+      activityTypes?: ActivityHistoryEntry['activityType'][];
+      dateRange?: { start: Date; end: Date };
+      actors?: string[];
+      visibility?: ActivityHistoryEntry['visibility'][];
+    }
+  ): Promise<GrievanceHistory | DataPrincipalRequestHistory>;
+  
+  getActivitySummary(
+    entityType: 'GRIEVANCE' | 'DATA_REQUEST',
+    entityId: string
+  ): Promise<{
+    totalActivities: number;
+    recentActivity: string;
+    nextAction?: string;
+    daysActive: number;
+  }>;
 }

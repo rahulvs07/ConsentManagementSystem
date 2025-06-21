@@ -39,6 +39,7 @@ import {
   Unlock,
   UserCheck,
   UserX,
+  User,
   Mail,
   Phone,
   Calendar,
@@ -62,7 +63,8 @@ import {
   Link,
   Unlink
 } from 'lucide-react';
-import { ConsentStatus, ProcessingPurpose, AuditAction, User, ConsentRecord, GrievanceTicket, GrievanceCategory, GrievanceStatus, GrievancePriority } from '@/types/dpdp';
+import { ConsentStatus, ProcessingPurpose, AuditAction, User as UserType, ConsentRecord, GrievanceTicket, GrievanceCategory, GrievanceStatus, GrievancePriority } from '@/types/dpdp';
+import ActivityHistory from '@/components/ui/activity-history';
 
 // Enhanced interfaces for BRD compliance
 interface DataProcessingRequest {
@@ -198,6 +200,16 @@ const DataFiduciaryDashboard = () => {
   const [grievanceDialogOpen, setGrievanceDialogOpen] = useState(false);
   const [newFlowDialogOpen, setNewFlowDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // History dialog states
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyEntityType, setHistoryEntityType] = useState<'GRIEVANCE' | 'DATA_REQUEST'>('GRIEVANCE');
+  const [historyEntityId, setHistoryEntityId] = useState<string>('');
+  const [historyReferenceNumber, setHistoryReferenceNumber] = useState<string>('');
+  
+  // Data Principal Request dialog states
+  const [requestDetailDialogOpen, setRequestDetailDialogOpen] = useState(false);
+  const [selectedDataPrincipalRequest, setSelectedDataPrincipalRequest] = useState<DataPrincipalRequest | null>(null);
   
   // New state for status change functionality - BRD Section 4.3.3 & 4.5 Compliance
   const [statusChangeDialogOpen, setStatusChangeDialogOpen] = useState(false);
@@ -721,6 +733,18 @@ const DataFiduciaryDashboard = () => {
     setStatusChangeReason('');
     setStatusChangeNotes('');
     setStatusChangeDialogOpen(true);
+  };
+
+  const handleViewRequest = (request: DataPrincipalRequest) => {
+    setSelectedDataPrincipalRequest(request);
+    setRequestDetailDialogOpen(true);
+  };
+
+  const handleShowRequestHistory = (request: DataPrincipalRequest) => {
+    setHistoryEntityType('DATA_REQUEST');
+    setHistoryEntityId(request.id);
+    setHistoryReferenceNumber(request.id);
+    setHistoryDialogOpen(true);
   };
 
   const updateRequestStatus = async () => {
@@ -1382,7 +1406,7 @@ const DataFiduciaryDashboard = () => {
                         
                         <div className="flex items-center gap-2">
                           {getStatusBadge(request.status)}
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleViewRequest(request)}>
                             <Eye className="w-3 h-3 mr-1" />
                             View
                           </Button>
@@ -1393,8 +1417,8 @@ const DataFiduciaryDashboard = () => {
                           <Button size="sm">
                             <Send className="w-3 h-3 mr-1" />
                             Respond
-              </Button>
-            </div>
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1624,16 +1648,32 @@ const DataFiduciaryDashboard = () => {
                                     </div>
                                   </div>
 
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="outline" onClick={() => setGrievanceDialogOpen(false)}>
-                                      Close
+                                  <div className="flex justify-between">
+                                    <Button 
+                                      variant="outline"
+                                      onClick={() => {
+                                        if (selectedGrievance) {
+                                          setHistoryDialogOpen(true);
+                                          setHistoryEntityType('GRIEVANCE');
+                                          setHistoryEntityId(selectedGrievance.id);
+                                          setHistoryReferenceNumber(selectedGrievance.referenceNumber);
+                                        }
+                                      }}
+                                    >
+                                      <History className="h-4 w-4 mr-2" />
+                                      History
                                     </Button>
-                                    <Button onClick={() => {
-                                      addNotification('success', 'Grievance response sent successfully');
-                                      setGrievanceDialogOpen(false);
-                                    }}>
-                                      Send Response
-                                    </Button>
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" onClick={() => setGrievanceDialogOpen(false)}>
+                                        Close
+                                      </Button>
+                                      <Button onClick={() => {
+                                        addNotification('success', 'Grievance response sent successfully');
+                                        setGrievanceDialogOpen(false);
+                                      }}>
+                                        Send Response
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -2126,6 +2166,175 @@ const DataFiduciaryDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Data Principal Request Detail Dialog */}
+        <Dialog open={requestDetailDialogOpen} onOpenChange={setRequestDetailDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                Data Principal Request Details
+              </DialogTitle>
+              <DialogDescription>
+                Complete request information with linked consent data and communication history
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedDataPrincipalRequest && (
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Requester</Label>
+                    <p className="text-sm font-semibold">{selectedDataPrincipalRequest.userName}</p>
+                    <p className="text-sm text-gray-600">{selectedDataPrincipalRequest.userEmail}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Request Type</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={
+                        selectedDataPrincipalRequest.requestType === 'ERASURE' ? 'destructive' :
+                        selectedDataPrincipalRequest.requestType === 'ACCESS' ? 'default' :
+                        'secondary'
+                      }>
+                        {selectedDataPrincipalRequest.requestType}
+                      </Badge>
+                      <Badge variant={
+                        selectedDataPrincipalRequest.priority === 'HIGH' || selectedDataPrincipalRequest.priority === 'URGENT' ? 'destructive' :
+                        selectedDataPrincipalRequest.priority === 'MEDIUM' ? 'default' : 'secondary'
+                      }>
+                        {selectedDataPrincipalRequest.priority}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status and Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Status</Label>
+                    <div className="mt-1">
+                      {getStatusBadge(selectedDataPrincipalRequest.status)}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Submitted</Label>
+                    <p className="text-sm">{selectedDataPrincipalRequest.submittedAt.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Due Date</Label>
+                    <p className="text-sm">{selectedDataPrincipalRequest.dueDate.toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Description</Label>
+                  <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-md">
+                    {selectedDataPrincipalRequest.description}
+                  </p>
+                </div>
+
+                {/* Linked Consents */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Linked Consents</Label>
+                  <div className="bg-blue-50 p-4 rounded-md">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Link className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">Related Consent Records</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDataPrincipalRequest.relatedConsents.map((consentId) => (
+                        <Badge key={consentId} variant="outline" className="text-xs">
+                          {consentId}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment */}
+                {selectedDataPrincipalRequest.assignedTo && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Assigned To</Label>
+                    <p className="text-sm">{selectedDataPrincipalRequest.assignedTo}</p>
+                  </div>
+                )}
+
+                {/* Documents */}
+                {selectedDataPrincipalRequest.documents.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Documents</Label>
+                    <div className="mt-2 space-y-2">
+                      {selectedDataPrincipalRequest.documents.map((doc, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                          <FileText className="w-4 h-4 text-gray-600" />
+                          <span className="text-sm">{doc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Communication Log */}
+                {selectedDataPrincipalRequest.communicationLog.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Communication History</Label>
+                    <div className="mt-2 space-y-3 max-h-40 overflow-y-auto">
+                      {selectedDataPrincipalRequest.communicationLog.map((comm, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded-md">
+                          <div className="flex justify-between items-start mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              {comm.type}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {comm.timestamp.toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-900">{comm.message}</p>
+                          <p className="text-xs text-gray-600 mt-1">By: {comm.sentBy}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-between items-center pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleShowRequestHistory(selectedDataPrincipalRequest)}
+                    className="flex items-center gap-2"
+                  >
+                    <History className="w-4 h-4" />
+                    View History
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setRequestDetailDialogOpen(false)}>
+                      Close
+                    </Button>
+                    <Button onClick={() => {
+                      setRequestDetailDialogOpen(false);
+                      handleRequestStatusChange(selectedDataPrincipalRequest);
+                    }}>
+                      Update Status
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Activity History Dialog */}
+        <ActivityHistory
+          entityType={historyEntityType}
+          entityId={historyEntityId}
+          referenceNumber={historyReferenceNumber}
+          isOpen={historyDialogOpen}
+          onClose={() => setHistoryDialogOpen(false)}
+          userRole="DATA_FIDUCIARY"
+        />
       </div>
     </div>
   );

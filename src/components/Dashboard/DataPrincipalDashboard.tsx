@@ -89,6 +89,7 @@ import {
 } from 'lucide-react';
 import { ConsentRecord, ProcessingPurpose, ConsentStatus, GrievanceTicket, AuditEntry, AuditAction, User as UserType, ConsentArtifact, UserRole, PurposeCategory, GrievanceStatus, GrievancePriority, GrievanceCategory } from '@/types/dpdp';
 import GrievanceForm from '@/components/ui/grievance-form';
+import ActivityHistory from '@/components/ui/activity-history';
 import IntegratedConsentNotice from '@/components/Consent/IntegratedConsentNotice';
 import LoginConsentBanner from '@/components/Consent/LoginConsentBanner';
 
@@ -236,6 +237,12 @@ export default function DataPrincipalDashboard() {
   const [grievances, setGrievances] = useState<GrievanceTicket[]>([]);
   const [selectedGrievance, setSelectedGrievance] = useState<GrievanceTicket | null>(null);
   const [grievanceDetailOpen, setGrievanceDetailOpen] = useState(false);
+  
+  // History dialog states
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyEntityType, setHistoryEntityType] = useState<'GRIEVANCE' | 'DATA_REQUEST'>('GRIEVANCE');
+  const [historyEntityId, setHistoryEntityId] = useState<string>('');
+  const [historyReferenceNumber, setHistoryReferenceNumber] = useState<string>('');
 
   // Simulate real-time notifications
   useEffect(() => {
@@ -1454,6 +1461,18 @@ export default function DataPrincipalDashboard() {
                     </div>
 
                     <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setHistoryDialogOpen(true);
+                          setHistoryEntityType('GRIEVANCE');
+                          setHistoryEntityId(selectedGrievance.id);
+                          setHistoryReferenceNumber(selectedGrievance.referenceNumber);
+                        }}
+                      >
+                        <History className="h-4 w-4 mr-2" />
+                        History
+                      </Button>
                       <Button variant="outline" onClick={() => setGrievanceDetailOpen(false)}>
                         Close
             </Button>
@@ -1940,6 +1959,16 @@ export default function DataPrincipalDashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Activity History Dialog */}
+        <ActivityHistory
+          entityType={historyEntityType}
+          entityId={historyEntityId}
+          referenceNumber={historyReferenceNumber}
+          isOpen={historyDialogOpen}
+          onClose={() => setHistoryDialogOpen(false)}
+          userRole="DATA_PRINCIPAL"
+        />
       </div>
     </div>
   );

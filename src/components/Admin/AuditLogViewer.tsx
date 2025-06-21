@@ -596,7 +596,7 @@ const AuditLogViewer = ({ userRole, userId }: AuditLogViewerProps) => {
             </Badge>
           </CardTitle>
           <CardDescription>
-            Tamper-proof audit trail with cryptographic hashing as per DPDP Act 2023 Section 4.7.1
+            Tamper-proof audit trail with cryptographic hashing.
           </CardDescription>
         </CardHeader>
       </Card>

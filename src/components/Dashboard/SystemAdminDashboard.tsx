@@ -150,6 +150,8 @@ import {
   ProcessingPurpose,
   PurposeCategory
 } from '@/types/dpdp';
+import { useLanguage } from '@/hooks/useLanguage';
+import NoticeHistoryViewer from '@/components/Admin/NoticeHistoryViewer';
 
 interface SystemConfig {
   sessionTimeout: number;
@@ -1149,7 +1151,7 @@ const SystemAdminDashboard = () => {
             <span>Data Retention Policies</span>
             </CardTitle>
           <CardDescription>
-            Configure data retention and deletion policies as per DPDP Act 2023 Section 4.6.2
+            Configure data retention and deletion policies.
           </CardDescription>
           </CardHeader>
           <CardContent>
@@ -2184,7 +2186,7 @@ const SystemAdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1 bg-muted/50 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1 h-auto p-1 bg-muted/50 rounded-lg">
           <NavigationTab 
             value="overview" 
             icon={<BarChart3 className="h-4 w-4" />}
@@ -2207,6 +2209,14 @@ const SystemAdminDashboard = () => {
             isCompact={true}
           >
             App Config
+          </NavigationTab>
+          
+          <NavigationTab 
+            value="notices" 
+            icon={<FileText className="h-4 w-4" />}
+            isCompact={true}
+          >
+            Notice History
           </NavigationTab>
           
           <NavigationTab 
@@ -2248,6 +2258,10 @@ const SystemAdminDashboard = () => {
         
         <TabsContent value="app-config">
           <AppConfigTab />
+        </TabsContent>
+        
+        <TabsContent value="notices">
+          <NoticeHistoryViewer />
         </TabsContent>
         
         <TabsContent value="users">

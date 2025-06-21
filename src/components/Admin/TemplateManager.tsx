@@ -43,8 +43,10 @@ import {
   EventType,
   TranslationKey,
   TranslationCategory,
-  AdminConfiguration
+  AdminConfiguration,
+  NoticeStatus
 } from '@/types/dpdp';
+import { toast } from '@/components/ui/use-toast';
 
 interface TemplateManagerProps {
   organizationId: string;
@@ -286,6 +288,129 @@ By clicking "I Agree" below, you provide your explicit consent for the processin
   const generateUniqueId = () => {
     const count = purposeMappings.length + 1;
     return `P-${count.toString().padStart(3, '0')}`;
+  };
+
+  // Template Management Functions
+  const saveTemplate = async () => {
+    if (!newTemplate.name || !newTemplate.content) {
+      toast({
+        title: "Validation Error",
+        description: "Template name and content are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const template: ConsentTemplate = {
+      ...newTemplate,
+      id: editingTemplate ? editingTemplate.id : `template_${Date.now()}`,
+      createdAt: editingTemplate ? editingTemplate.createdAt : new Date(),
+      lastUpdated: new Date(),
+      status: NoticeStatus.DRAFT, // Always save as draft initially
+      version: editingTemplate ? 
+        (parseFloat(editingTemplate.version) + 0.1).toFixed(1) : 
+        '1.0'
+    };
+
+    if (editingTemplate) {
+      setTemplates(prev => prev.map(t => t.id === template.id ? template : t));
+      toast({
+        title: "Template Updated",
+        description: `Template "${template.name}" has been saved as draft v${template.version}`
+      });
+    } else {
+      setTemplates(prev => [...prev, template]);
+      toast({
+        title: "Template Created",
+        description: `Template "${template.name}" has been created as draft v${template.version}`
+      });
+    }
+
+    resetForm();
+  };
+
+  // New: Template Publishing Workflow
+  const submitForApproval = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    try {
+      const updatedTemplate = {
+        ...template,
+        status: NoticeStatus.PENDING_APPROVAL,
+        lastUpdated: new Date()
+      };
+
+      setTemplates(prev => prev.map(t => t.id === templateId ? updatedTemplate : t));
+      
+      toast({
+        title: "Submitted for Approval",
+        description: `Template "${template.name}" has been submitted for approval`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit template for approval",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const approveTemplate = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    try {
+      const updatedTemplate = {
+        ...template,
+        status: NoticeStatus.PUBLISHED,
+        approvedBy: 'current_admin_user', // In real app, get from auth context
+        approvedAt: new Date(),
+        publishedBy: 'current_admin_user',
+        publishedAt: new Date(),
+        lastUpdated: new Date()
+      };
+
+      setTemplates(prev => prev.map(t => t.id === templateId ? updatedTemplate : t));
+      
+      toast({
+        title: "Template Published",
+        description: `Template "${template.name}" v${template.version} is now live`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to publish template",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const rejectTemplate = async (templateId: string, reason: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    try {
+      const updatedTemplate = {
+        ...template,
+        status: NoticeStatus.DRAFT,
+        lastUpdated: new Date()
+      };
+
+      setTemplates(prev => prev.map(t => t.id === templateId ? updatedTemplate : t));
+      
+      toast({
+        title: "Template Rejected",
+        description: `Template "${template.name}" has been rejected and moved back to draft`,
+        variant: "destructive"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject template",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

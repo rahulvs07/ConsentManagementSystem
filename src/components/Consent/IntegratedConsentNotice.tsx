@@ -194,6 +194,41 @@ export default function IntegratedConsentNotice({
         }
       );
 
+      // Store the rendered notice as an artifact (BRD Critical Requirement)
+      if (noticeData.dynamicContent && consentArtifact) {
+        const renderedHtml = generateRenderedNoticeHtml();
+        const renderedPlainText = generateRenderedNoticePlainText();
+        
+        try {
+          const noticeArtifact = await consentService.saveNoticeArtifact(
+            consentArtifact.id,
+            noticeData.templateId,
+            '1.0', // Template version
+            renderedHtml,
+            renderedPlainText,
+            activeRequirement.language,
+            activeRequirement.purposeIds,
+            noticeData.dynamicContent.dataCategories,
+            activeRequirement.userId.includes('minor') ? 'minor' : 'adult',
+            {
+              ipAddress: '192.168.1.100',
+              userAgent: navigator.userAgent,
+              sessionId: `session_${Date.now()}`,
+              screenResolution: `${window.screen.width}x${window.screen.height}`
+            }
+          );
+
+          // Link the consent artifact to the notice artifact
+          await consentService.linkConsentToNoticeArtifact(
+            consentArtifact.id,
+            noticeArtifact.id
+          );
+        } catch (error) {
+          console.warn('Failed to store notice artifact:', error);
+          // Don't fail the consent submission if notice storage fails
+        }
+      }
+
       // Update consent status
       await consentService.updateConsentStatus(activeRequirement.id, 'COMPLETED');
 
@@ -204,21 +239,90 @@ export default function IntegratedConsentNotice({
         artifactId: consentArtifact.id
       }));
 
-      // Close modal after successful submission
-      setTimeout(() => {
-        setShowModal(false);
-        setShowBanner(false);
-        onConsentCompleted?.(consentArtifact);
-      }, 2000);
+      // Hide UI and notify parent
+      setShowModal(false);
+      setShowBanner(false);
+      
+      if (onConsentCompleted) {
+        onConsentCompleted(consentArtifact);
+      }
 
     } catch (error) {
       console.error('Error submitting consent:', error);
       setWorkflowState(prev => ({
         ...prev,
         submissionStatus: 'ERROR',
-        validationErrors: ['Failed to submit consent decisions']
+        validationErrors: ['Failed to submit consent. Please try again.']
       }));
     }
+  };
+
+  // Helper function to generate rendered HTML notice
+  const generateRenderedNoticeHtml = (): string => {
+    if (!noticeData || !activeRequirement) return '';
+
+    const { dynamicContent } = noticeData;
+    const selectedPurposes = activeRequirement.purposes.filter(p => 
+      workflowState.userSelections[p.id] || p.isEssential
+    );
+
+    return `
+      <div class="consent-notice" data-language="${activeRequirement.language}">
+        <h1>${dynamicContent.title}</h1>
+        <p>${dynamicContent.description}</p>
+        
+        <h2>Purposes Consented To:</h2>
+        <ul>
+          ${selectedPurposes.map(purpose => `
+            <li>
+              <strong>${purpose.name}</strong> ${purpose.isEssential ? '(Essential)' : '(Optional)'}
+              <p>${purpose.description}</p>
+              <p>Legal Basis: ${purpose.legalBasis}</p>
+              <p>Retention: ${purpose.retentionPeriod}</p>
+            </li>
+          `).join('')}
+        </ul>
+        
+        <h2>Data Categories:</h2>
+        <ul>
+          ${dynamicContent.dataCategories.map(category => `<li>${category}</li>`).join('')}
+        </ul>
+        
+        <p>Consent given on: ${new Date().toISOString()}</p>
+        <p>User Agent: ${navigator.userAgent}</p>
+      </div>
+    `;
+  };
+
+  // Helper function to generate plain text notice
+  const generateRenderedNoticePlainText = (): string => {
+    if (!noticeData || !activeRequirement) return '';
+
+    const { dynamicContent } = noticeData;
+    const selectedPurposes = activeRequirement.purposes.filter(p => 
+      workflowState.userSelections[p.id] || p.isEssential
+    );
+
+    return `
+CONSENT NOTICE
+
+${dynamicContent.title}
+${dynamicContent.description}
+
+Purposes Consented To:
+${selectedPurposes.map(purpose => `
+- ${purpose.name} ${purpose.isEssential ? '(Essential)' : '(Optional)'}
+  ${purpose.description}
+  Legal Basis: ${purpose.legalBasis}
+  Retention: ${purpose.retentionPeriod}
+`).join('')}
+
+Data Categories:
+${dynamicContent.dataCategories.map(category => `- ${category}`).join('\n')}
+
+Consent given on: ${new Date().toISOString()}
+User Agent: ${navigator.userAgent}
+    `.trim();
   };
 
   // 4. Render Progress Indicator

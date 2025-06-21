@@ -69,6 +69,7 @@ import {
   PowerOff,
   MessageSquare
 } from 'lucide-react';
+import ActivityHistory from '@/components/ui/activity-history';
 
 interface ConsentAlert {
   id: string;
@@ -176,6 +177,12 @@ const DataProcessorDashboard = () => {
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [processingDialogOpen, setProcessingDialogOpen] = useState(false);
   const [processingNotes, setProcessingNotes] = useState('');
+  
+  // History dialog states
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyEntityType, setHistoryEntityType] = useState<'GRIEVANCE' | 'DATA_REQUEST'>('DATA_REQUEST');
+  const [historyEntityId, setHistoryEntityId] = useState<string>('');
+  const [historyReferenceNumber, setHistoryReferenceNumber] = useState<string>('');
 
   // Mock data initialization
   useEffect(() => {
@@ -1212,6 +1219,26 @@ const DataProcessorDashboard = () => {
                   </div>
                 </div>
               )}
+              
+              <div className="flex justify-between mt-6">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (selectedRequest) {
+                      setHistoryDialogOpen(true);
+                      setHistoryEntityType('DATA_REQUEST');
+                      setHistoryEntityId(selectedRequest.id);
+                      setHistoryReferenceNumber(selectedRequest.referenceNumber);
+                    }
+                  }}
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+                <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
 
@@ -1487,6 +1514,16 @@ const DataProcessorDashboard = () => {
       </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Activity History Dialog */}
+      <ActivityHistory
+        entityType={historyEntityType}
+        entityId={historyEntityId}
+        referenceNumber={historyReferenceNumber}
+        isOpen={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
+        userRole="DATA_PROCESSOR"
+      />
     </div>
   );
 };
