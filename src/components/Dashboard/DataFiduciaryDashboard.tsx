@@ -61,7 +61,9 @@ import {
   Trash2,
   Plus,
   Link,
-  Unlink
+  Unlink,
+  Languages,
+  ShieldCheck
 } from 'lucide-react';
 import { ConsentStatus, ProcessingPurpose, AuditAction, User as UserType, ConsentRecord, GrievanceTicket, GrievanceCategory, GrievanceStatus, GrievancePriority } from '@/types/dpdp';
 import ActivityHistory from '@/components/ui/activity-history';
@@ -972,9 +974,10 @@ const DataFiduciaryDashboard = () => {
             <TabsTrigger value="data-principal" className="flex-shrink-0">Data Principal Requests</TabsTrigger>
             <TabsTrigger value="grievances" className="flex-shrink-0">Grievance Management</TabsTrigger>
             <TabsTrigger value="third-party" className="flex-shrink-0">Third-Party Management</TabsTrigger>
-            <TabsTrigger value="processing" className="flex-shrink-0">Data Processing</TabsTrigger>
-            <TabsTrigger value="compliance" className="flex-shrink-0">Compliance</TabsTrigger>
-          </TabsList>
+                      <TabsTrigger value="processing" className="flex-shrink-0">Data Processing</TabsTrigger>
+          <TabsTrigger value="compliance" className="flex-shrink-0">Compliance</TabsTrigger>
+          <TabsTrigger value="notices" className="flex-shrink-0">Notice Management</TabsTrigger>
+        </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -2072,6 +2075,198 @@ const DataFiduciaryDashboard = () => {
           </div>
         </CardContent>
       </Card>
+          </TabsContent>
+
+          {/* Notice Management Tab */}
+          <TabsContent value="notices" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Consent Notice Management</h2>
+                <p className="text-gray-600">Create and manage consent notices for data principals</p>
+              </div>
+              <Button>
+                <FileText className="h-4 w-4 mr-2" />
+                Configure Notice Templates
+              </Button>
+            </div>
+
+            <div className="grid gap-6">
+              {/* Dynamic Notice Generation */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-blue-600" />
+                    Dynamic Notice Generation
+                  </CardTitle>
+                  <CardDescription>
+                    Create consent notices dynamically based on purposes and language for data principals
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Data Fiduciary</Label>
+                        <Select defaultValue="df_ecommerce">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="df_ecommerce">ShopEasy E-commerce</SelectItem>
+                            <SelectItem value="df_fintech">SecureBank Digital</SelectItem>
+                            <SelectItem value="df_healthcare">HealthCare Plus</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Notice Language</Label>
+                        <Select defaultValue="english">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="hindi">हिन्दी (Hindi)</SelectItem>
+                            <SelectItem value="bengali">বাংলা (Bengali)</SelectItem>
+                            <SelectItem value="tamil">தமিழ் (Tamil)</SelectItem>
+                            <SelectItem value="telugu">తెలుగు (Telugu)</SelectItem>
+                            <SelectItem value="marathi">मराठी (Marathi)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Select Processing Purposes</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                        {[
+                          'Account Management',
+                          'Service Delivery', 
+                          'Marketing Communications',
+                          'Usage Analytics',
+                          'Personalization',
+                          'Security Monitoring',
+                          'Customer Support',
+                          'Legal Compliance'
+                        ].map(purpose => (
+                          <div key={purpose} className="flex items-center space-x-2">
+                            <Switch id={purpose} />
+                            <Label htmlFor={purpose} className="text-sm">{purpose}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button className="w-full">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Generate Dynamic Notice
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Sample Generated Notice */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-gray-600" />
+                    Sample Generated Notice
+                  </CardTitle>
+                  <CardDescription>
+                    Example of a dynamically generated consent notice with purpose mapping
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <div className="space-y-6">
+                      {/* Notice Header */}
+                      <div className="text-center border-b pb-4">
+                        <h3 className="text-xl font-bold text-gray-900">Data Processing Notice</h3>
+                        <p className="text-sm text-gray-600 mt-1">Your Privacy Rights Under DPDP Act 2023</p>
+                        <div className="flex justify-center gap-2 mt-2">
+                          <Badge variant="outline">ShopEasy E-commerce</Badge>
+                          <Badge variant="outline">English</Badge>
+                          <Badge variant="outline">Version 2.0</Badge>
+                        </div>
+                      </div>
+
+                      {/* Purpose Sections */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Target className="h-4 w-4" />
+                          Purposes of Data Processing
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="bg-blue-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 mb-1">
+                              <ShieldCheck className="h-4 w-4 text-blue-600" />
+                              <span className="font-medium text-blue-900">Account Management (Essential)</span>
+                              <Badge className="text-xs bg-blue-100 text-blue-800">Purpose ID: ACC_MGMT_001</Badge>
+                            </div>
+                            <p className="text-sm text-blue-800">Creating and managing your account, authentication, and basic service delivery</p>
+                            <p className="text-xs text-blue-600 mt-1">Data Types: Name, Email, Phone • Retention: Until account deletion</p>
+                          </div>
+
+                          <div className="bg-purple-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Mail className="h-4 w-4 text-purple-600" />
+                              <span className="font-medium text-purple-900">Marketing Communications (Optional)</span>
+                              <Badge className="text-xs bg-purple-100 text-purple-800">Purpose ID: MKT_COMM_002</Badge>
+                            </div>
+                            <p className="text-sm text-purple-800">Sending promotional emails, SMS, and personalized offers</p>
+                            <p className="text-xs text-purple-600 mt-1">Data Types: Email, Preferences • Retention: 3 years or until withdrawal</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rights Section */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Scale className="h-4 w-4" />
+                          Your Rights Under DPDP Act 2023
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to access your data
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to correct data
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to erase data
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            Right to data portability
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="bg-gray-100 p-3 rounded-lg">
+                        <h4 className="font-semibold text-gray-900 mb-2">Contact Information</h4>
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <p>Data Protection Officer: dpo@shopeasy.com</p>
+                          <p>Grievance Officer: grievance@shopeasy.com</p>
+                        </div>
+                      </div>
+
+                      {/* Translation Indicator */}
+                      <Alert className="bg-green-50 border-green-200">
+                        <Globe className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          <strong>Multi-language Support:</strong> This notice is available in 22 Indian languages. 
+                          Language preference is automatically detected and can be changed anytime.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 

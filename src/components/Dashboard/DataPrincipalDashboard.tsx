@@ -85,7 +85,9 @@ import {
   Save,
   RotateCcw,
   MoreHorizontal,
-  Languages
+  Languages,
+  ArrowLeft,
+  UserPlus
 } from 'lucide-react';
 import { ConsentRecord, ProcessingPurpose, ConsentStatus, GrievanceTicket, AuditEntry, AuditAction, User as UserType, ConsentArtifact, UserRole, PurposeCategory, GrievanceStatus, GrievancePriority, GrievanceCategory } from '@/types/dpdp';
 import GrievanceForm from '@/components/ui/grievance-form';
@@ -103,7 +105,6 @@ const mockUser: UserType = {
   isMinor: false,
   parentGuardianId: undefined,
   digiLockerVerified: true,
-  preferredLanguage: 'english',
   contactPhone: '+91-9876543210',
   notificationPreferences: {
     email: true,
@@ -221,6 +222,103 @@ const mockConsentRecords: DashboardConsentRecord[] = [
   }
 ];
 
+// New interfaces for data request forms
+interface DataRequestForm {
+  type: 'ACCESS' | 'CORRECT' | 'ERASE' | 'PORTABILITY' | 'NOMINATION';
+  consentId: string;
+  purpose: string;
+  reason?: string;
+  notificationPreference: 'email' | 'sms';
+  fields?: string[];
+  corrections?: Array<{ field: string; currentValue: string; newValue: string }>;
+  erasureScope?: 'full' | 'partial';
+  erasureFields?: string[];
+  confirmErasure?: boolean;
+  // Nomination specific fields
+  nomineeName?: string;
+  nomineeRelationship?: string;
+  nomineeContact?: string;
+  nomineeEmail?: string;
+  nomineeAddress?: string;
+  proxyScope?: string[];
+  validityFrom?: string;
+  validityTo?: string;
+  authDocuments?: File[];
+}
+
+interface DataRequest {
+  id: string;
+  referenceId: string;
+  type: 'ACCESS' | 'CORRECT' | 'ERASE' | 'PORTABILITY' | 'NOMINATION';
+  status: 'SUBMITTED' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+  submittedAt: Date;
+  dueDate: Date;
+  description: string;
+  userId: string;
+}
+
+// Mock data for active consents
+const mockActiveConsents = [
+  {
+    id: 'consent_001',
+    purposeId: 'P-001',
+    purposeName: 'Account Creation',
+    category: 'Essential',
+    grantedAt: '12-May-2025',
+    status: 'GRANTED'
+  },
+  {
+    id: 'consent_002',
+    purposeId: 'P-002',
+    purposeName: 'Marketing Emails',
+    category: 'Marketing',
+    grantedAt: '10-Feb-2025',
+    status: 'GRANTED'
+  },
+  {
+    id: 'consent_003',
+    purposeId: 'P-003',
+    purposeName: 'Analytics Sharing',
+    category: 'Analytics',
+    grantedAt: '21-Mar-2025',
+    status: 'GRANTED'
+  }
+];
+
+// Mock data requests for demonstration
+const mockDataRequests: DataRequest[] = [
+  {
+    id: 'req_001',
+    referenceId: 'REQ-20251106-001',
+    type: 'ACCESS',
+    status: 'IN_PROGRESS',
+    submittedAt: new Date('2024-11-05T10:30:00Z'),
+    dueDate: new Date('2024-12-05T10:30:00Z'),
+    description: 'Request to access personal data for account verification',
+    userId: 'dp_001'
+  },
+  {
+    id: 'req_002',
+    referenceId: 'REQ-20251105-002',
+    type: 'CORRECT',
+    status: 'COMPLETED',
+    submittedAt: new Date('2024-11-03T14:20:00Z'),
+    dueDate: new Date('2024-11-18T14:20:00Z'),
+    description: 'Correction of email address and phone number',
+    userId: 'dp_001'
+  },
+  {
+    id: 'req_003',
+    referenceId: 'NOM-20251110-001',
+    type: 'NOMINATION',
+    status: 'SUBMITTED',
+    submittedAt: new Date('2024-11-10T09:15:00Z'),
+    dueDate: new Date('2024-11-12T09:15:00Z'),
+    description: 'Proxy nomination for spouse - John Smith',
+    userId: 'dp_001'
+  }
+];
+
 export default function DataPrincipalDashboard() {
   const { t } = useLanguage();
   const [user] = useState<any>(mockUser); // Using any to allow additional properties
@@ -243,6 +341,23 @@ export default function DataPrincipalDashboard() {
   const [historyEntityType, setHistoryEntityType] = useState<'GRIEVANCE' | 'DATA_REQUEST'>('GRIEVANCE');
   const [historyEntityId, setHistoryEntityId] = useState<string>('');
   const [historyReferenceNumber, setHistoryReferenceNumber] = useState<string>('');
+
+  // New state for data request forms
+  const [dataRequestFormOpen, setDataRequestFormOpen] = useState(false);
+  const [dataRequestType, setDataRequestType] = useState<'ACCESS' | 'CORRECT' | 'ERASE' | 'PORTABILITY' | 'NOMINATION' | null>(null);
+  const [dataRequestForm, setDataRequestForm] = useState<DataRequestForm>({
+    type: 'ACCESS',
+    consentId: '',
+    purpose: '',
+    notificationPreference: 'email',
+    fields: [],
+    corrections: [],
+    proxyScope: []
+  });
+  const [dataRequests, setDataRequests] = useState<DataRequest[]>(mockDataRequests);
+  const [showRequestTypeSelection, setShowRequestTypeSelection] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const [submittedRequestId, setSubmittedRequestId] = useState<string>('');
 
   // Simulate real-time notifications
   useEffect(() => {
@@ -572,8 +687,109 @@ export default function DataPrincipalDashboard() {
     }
   };
 
+  // New functions for data request handling
+  const handleDataRequestTypeSelect = (type: 'ACCESS' | 'CORRECT' | 'ERASE' | 'PORTABILITY' | 'NOMINATION') => {
+    setDataRequestType(type);
+    setDataRequestForm(prev => ({ ...prev, type }));
+    setShowRequestTypeSelection(false);
+  };
+
+  const handleDataRequestSubmit = () => {
+    const newRequest: DataRequest = {
+      id: `req_${Date.now()}`,
+      referenceId: `${dataRequestType === 'NOMINATION' ? 'NOM' : 'REQ'}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+      type: dataRequestForm.type,
+      status: 'SUBMITTED',
+      submittedAt: new Date(),
+      dueDate: new Date(Date.now() + (dataRequestType === 'NOMINATION' ? 2 : 30) * 24 * 60 * 60 * 1000),
+      description: getRequestDescription(),
+      userId: user.id
+    };
+
+    setDataRequests(prev => [newRequest, ...prev]);
+    setSubmittedRequestId(newRequest.referenceId);
+    setRequestSubmitted(true);
+    
+    // Log audit entry
+    logAuditEntry(
+      `DATA_REQUEST_SUBMITTED_${dataRequestForm.type}`,
+      `User submitted ${dataRequestForm.type.toLowerCase()} request`,
+      newRequest.id
+    );
+
+    // Add notification
+    addNotification('success', `${dataRequestForm.type} request submitted successfully! Reference: ${newRequest.referenceId}`);
+  };
+
+  const getRequestDescription = () => {
+    switch (dataRequestForm.type) {
+      case 'ACCESS':
+        return `Request to access personal data fields: ${dataRequestForm.fields?.join(', ') || 'All data'}`;
+      case 'CORRECT':
+        return `Data correction request for ${dataRequestForm.corrections?.length || 0} fields`;
+      case 'ERASE':
+        return `Data erasure request - ${dataRequestForm.erasureScope === 'full' ? 'Complete profile' : 'Specific fields'}`;
+      case 'PORTABILITY':
+        return 'Data portability request for data export';
+      case 'NOMINATION':
+        return `Proxy nomination for ${dataRequestForm.nomineeName} - ${dataRequestForm.nomineeRelationship}`;
+      default:
+        return 'Data request submitted';
+    }
+  };
+
+  const resetDataRequestForm = () => {
+    setDataRequestFormOpen(false);
+    setDataRequestType(null);
+    setShowRequestTypeSelection(false);
+    setRequestSubmitted(false);
+    setSubmittedRequestId('');
+    setDataRequestForm({
+      type: 'ACCESS',
+      consentId: '',
+      purpose: '',
+      notificationPreference: 'email',
+      fields: [],
+      corrections: [],
+      proxyScope: []
+    });
+  };
+
+  const addCorrectionField = () => {
+    setDataRequestForm(prev => ({
+      ...prev,
+      corrections: [...(prev.corrections || []), { field: '', currentValue: '', newValue: '' }]
+    }));
+  };
+
+  const updateCorrectionField = (index: number, field: keyof typeof dataRequestForm.corrections[0], value: string) => {
+    setDataRequestForm(prev => ({
+      ...prev,
+      corrections: prev.corrections?.map((correction, i) => 
+        i === index ? { ...correction, [field]: value } : correction
+      ) || []
+    }));
+  };
+
+  const removeCorrectionField = (index: number) => {
+    setDataRequestForm(prev => ({
+      ...prev,
+      corrections: prev.corrections?.filter((_, i) => i !== index) || []
+    }));
+  };
+
+  const getRequestStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'SUBMITTED': return 'default';
+      case 'IN_PROGRESS': return 'secondary';
+      case 'COMPLETED': return 'default';
+      case 'REJECTED': return 'destructive';
+      default: return 'outline';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Notifications */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {notifications.map(notification => (
@@ -736,14 +952,13 @@ export default function DataPrincipalDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <NavigationTab value="overview">{t.dashboard}</NavigationTab>
             <NavigationTab value="consents">{t.myConsents}</NavigationTab>
             <NavigationTab value="data-requests">{t.dataRequests}</NavigationTab>
             <NavigationTab value="grievances">{t.grievances}</NavigationTab>
             <NavigationTab value="audit">Audit Trail</NavigationTab>
             <NavigationTab value="settings">{t.privacySettings}</NavigationTab>
-            <NavigationTab value="notices">Notices</NavigationTab>
           </TabsList>
 
           {/* Overview Tab */}
@@ -1117,66 +1332,748 @@ export default function DataPrincipalDashboard() {
             </div>
           </TabsContent>
 
-          {/* Data Requests Tab */}
+          {/* Data Requests Tab - Enhanced */}
           <TabsContent value="data-requests" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Data Principal Rights</CardTitle>
                 <CardDescription>
                   Exercise your rights under the DPDP Act 2023
-            </CardDescription>
-          </CardHeader>
+                </CardDescription>
+              </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <Button 
                     className="h-24 flex-col gap-2 hover:shadow-lg transition-all duration-200 hover:scale-105 border-blue-200 hover:border-blue-400 hover:bg-blue-50" 
                     variant="outline"
                     onClick={() => {
-                      addNotification('success', 'Data access request initiated. You will receive your data within 30 days.');
-                      logAuditEntry('DATA_ACCESS_REQUEST', 'User requested access to personal data', user.id);
+                      setDataRequestFormOpen(true);
+                      setShowRequestTypeSelection(true);
                     }}
                   >
                     <Eye className="h-6 w-6" />
-                    <span>{t.accessData}</span>
-            </Button>
+                    <span>Access My Data</span>
+                  </Button>
                   <Button 
                     className="h-24 flex-col gap-2 hover:shadow-lg transition-all duration-200 hover:scale-105 border-green-200 hover:border-green-400 hover:bg-green-50" 
                     variant="outline"
                     onClick={() => {
-                      addNotification('success', 'Data correction request submitted. We will review and update your information.');
-                      logAuditEntry('DATA_CORRECTION_REQUEST', 'User requested data correction', user.id);
+                      setDataRequestFormOpen(true);
+                      setShowRequestTypeSelection(true);
                     }}
                   >
                     <Settings className="h-6 w-6" />
-                    <span>{t.correctData}</span>
-            </Button>
+                    <span>Correct My Data</span>
+                  </Button>
                   <Button 
                     className="h-24 flex-col gap-2 hover:shadow-lg transition-all duration-200 hover:scale-105 border-red-200 hover:border-red-400 hover:bg-red-50" 
                     variant="outline"
                     onClick={() => {
-                      if (confirm('Are you sure you want to request data erasure? This action cannot be undone.')) {
-                        addNotification('warning', 'Data erasure request submitted. Your data will be deleted within 30 days.');
-                        logAuditEntry('DATA_ERASURE_REQUEST', 'User requested data erasure', user.id);
-                      }
+                      setDataRequestFormOpen(true);
+                      setShowRequestTypeSelection(true);
                     }}
                   >
                     <Trash2 className="h-6 w-6" />
-                    <span>{t.eraseData}</span>
-            </Button>
+                    <span>Erase My Data</span>
+                  </Button>
                   <Button 
                     className="h-24 flex-col gap-2 hover:shadow-lg transition-all duration-200 hover:scale-105 border-purple-200 hover:border-purple-400 hover:bg-purple-50" 
                     variant="outline"
                     onClick={() => {
-                      addNotification('success', 'Data portability request initiated. Your data export will be ready for download.');
-                      logAuditEntry('DATA_PORTABILITY_REQUEST', 'User requested data portability', user.id);
+                      setDataRequestFormOpen(true);
+                      setShowRequestTypeSelection(true);
                     }}
                   >
                     <Download className="h-6 w-6" />
-                    <span>{t.portData}</span>
+                    <span>Port My Data</span>
+                  </Button>
+                  <Button 
+                    className="h-24 flex-col gap-2 hover:shadow-lg transition-all duration-200 hover:scale-105 border-orange-200 hover:border-orange-400 hover:bg-orange-50" 
+                    variant="outline"
+                    onClick={() => {
+                      setDataRequestFormOpen(true);
+                      setShowRequestTypeSelection(true);
+                    }}
+                  >
+                    <UserPlus className="h-6 w-6" />
+                    <span>Nomination</span>
                   </Button>
                 </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+
+            {/* My Data Requests Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  My Data Requests
+                </CardTitle>
+                <CardDescription>
+                  Track the status of your submitted data requests
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dataRequests && dataRequests.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Reference</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Submitted</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dataRequests.map((request) => (
+                          <TableRow key={request.id} className="cursor-pointer hover:bg-gray-50">
+                            <TableCell className="font-mono text-sm">
+                              {request.referenceId}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {request.type.replace('_', ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {request.description}
+                            </TableCell>
+                                                         <TableCell>
+                               <Badge variant={getRequestStatusBadgeVariant(request.status)}>
+                                 {request.status.replace('_', ' ')}
+                               </Badge>
+                             </TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {request.submittedAt.toLocaleDateString()}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {request.dueDate.toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No data requests yet</h3>
+                    <p className="text-gray-600 mb-4">
+                      You haven't submitted any data requests. Click the buttons above to get started.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Data Request Form Dialog */}
+            <Dialog open={dataRequestFormOpen} onOpenChange={setDataRequestFormOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {showRequestTypeSelection ? (
+                      <>
+                        <ArrowLeft className="h-5 w-5 cursor-pointer" onClick={() => setShowRequestTypeSelection(false)} />
+                        Submit a Data Request
+                      </>
+                    ) : requestSubmitted ? (
+                      <>
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        Request Submitted!
+                      </>
+                    ) : (
+                      <>
+                        <ArrowLeft className="h-5 w-5 cursor-pointer" onClick={() => setShowRequestTypeSelection(true)} />
+                        Data Request: {dataRequestType?.replace('_', ' ')}
+                      </>
+                    )}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {showRequestTypeSelection 
+                      ? "Which data right would you like to exercise?"
+                      : requestSubmitted
+                      ? "Your request has been submitted successfully"
+                      : "Complete the form below to submit your request"
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+
+                {showRequestTypeSelection && (
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-lg font-medium mb-4">Which data right would you like to exercise?</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Button
+                          variant="outline"
+                          className="h-20 flex-col gap-2 hover:bg-blue-50"
+                          onClick={() => handleDataRequestTypeSelect('ACCESS')}
+                        >
+                          <Eye className="h-6 w-6" />
+                          Access My Data
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-20 flex-col gap-2 hover:bg-green-50"
+                          onClick={() => handleDataRequestTypeSelect('CORRECT')}
+                        >
+                          <Settings className="h-6 w-6" />
+                          Correct My Data
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-20 flex-col gap-2 hover:bg-red-50"
+                          onClick={() => handleDataRequestTypeSelect('ERASE')}
+                        >
+                          <Trash2 className="h-6 w-6" />
+                          Erase My Data
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <Button
+                          variant="outline"
+                          className="h-20 flex-col gap-2 hover:bg-purple-50"
+                          onClick={() => handleDataRequestTypeSelect('PORTABILITY')}
+                        >
+                          <Download className="h-6 w-6" />
+                          Port My Data
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-20 flex-col gap-2 hover:bg-orange-50"
+                          onClick={() => handleDataRequestTypeSelect('NOMINATION')}
+                        >
+                          <UserPlus className="h-6 w-6" />
+                          Nomination
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-center gap-4">
+                      <Button variant="outline" onClick={resetDataRequestForm}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {requestSubmitted && (
+                  <div className="space-y-6 text-center">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-green-800 mb-2">Request Submitted Successfully!</h3>
+                      <div className="space-y-2 text-sm text-green-700">
+                        <p><strong>Reference ID:</strong> {submittedRequestId}</p>
+                        <p><strong>Type:</strong> {dataRequestForm.type.replace('_', ' ')}</p>
+                        <p><strong>Purpose:</strong> {dataRequestForm.purpose || 'Not specified'}</p>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-800 mb-2">What's next?</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• We've emailed you confirmation.</li>
+                        <li>• Track your request under "My Data Requests."</li>
+                        <li>• {dataRequestType === 'NOMINATION' ? 'DPO review within 48 hours.' : 'Response within 30 days.'}</li>
+                      </ul>
+                    </div>
+                    <Button onClick={resetDataRequestForm} className="w-full">
+                      Go to My Data Requests
+                    </Button>
+                  </div>
+                )}
+
+                {!showRequestTypeSelection && !requestSubmitted && dataRequestType && (
+                  <div className="space-y-6">
+                    {/* Common section - Linked Consent */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">1. Linked Consent (Active)</h3>
+                      <Select
+                        value={dataRequestForm.consentId}
+                        onValueChange={(value) => {
+                          const consent = mockActiveConsents.find(c => c.id === value);
+                          setDataRequestForm(prev => ({
+                            ...prev,
+                            consentId: value,
+                            purpose: consent ? `${consent.purposeId} (${consent.purposeName})` : ''
+                          }));
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Consent..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mockActiveConsents.map((consent) => (
+                            <SelectItem key={consent.id} value={consent.id}>
+                              {consent.purposeId} | {consent.purposeName} ({consent.category}) - Granted: {consent.grantedAt}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Access My Data Form */}
+                    {dataRequestType === 'ACCESS' && (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">2. Fields to Access</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {['Full Name', 'Email Address', 'Consent History', 'Transaction History'].map((field) => (
+                              <div key={field} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={field}
+                                  checked={dataRequestForm.fields?.includes(field)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setDataRequestForm(prev => ({
+                                        ...prev,
+                                        fields: [...(prev.fields || []), field]
+                                      }));
+                                    } else {
+                                      setDataRequestForm(prev => ({
+                                        ...prev,
+                                        fields: prev.fields?.filter(f => f !== field) || []
+                                      }));
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor={field} className="text-sm">{field}</Label>
+                              </div>
+                            ))}
+                            <div className="col-span-full">
+                              <Label htmlFor="other-field">Other:</Label>
+                              <Input
+                                id="other-field"
+                                placeholder="Specify other fields..."
+                                onBlur={(e) => {
+                                  if (e.target.value) {
+                                    setDataRequestForm(prev => ({
+                                      ...prev,
+                                      fields: [...(prev.fields || []), e.target.value]
+                                    }));
+                                    e.target.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="access-purpose">3. Purpose of Request (optional)</Label>
+                          <Textarea
+                            id="access-purpose"
+                            placeholder="I need this data to update my profile..."
+                            value={dataRequestForm.reason || ''}
+                            onChange={(e) => setDataRequestForm(prev => ({ ...prev, reason: e.target.value }))}
+                          />
+                        </div>
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            Note: You'll get a secure link to download your data within 30 days.
+                          </AlertDescription>
+                        </Alert>
+                      </>
+                    )}
+
+                    {/* Correct My Data Form */}
+                    {dataRequestType === 'CORRECT' && (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">2. Fields to Correct & New Values</h3>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-4 text-sm font-semibold text-gray-600 border-b pb-2">
+                              <div>Field</div>
+                              <div>Current Value</div>
+                              <div>New Value</div>
+                            </div>
+                            {dataRequestForm.corrections?.map((correction, index) => (
+                              <div key={index} className="grid grid-cols-3 gap-4 items-center">
+                                <Select
+                                  value={correction.field}
+                                  onValueChange={(value) => updateCorrectionField(index, 'field', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select field" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Name">Name</SelectItem>
+                                    <SelectItem value="Email">Email</SelectItem>
+                                    <SelectItem value="Phone">Phone</SelectItem>
+                                    <SelectItem value="Address">Address</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Input
+                                  placeholder="Current value"
+                                  value={correction.currentValue}
+                                  onChange={(e) => updateCorrectionField(index, 'currentValue', e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="New value"
+                                    value={correction.newValue}
+                                    onChange={(e) => updateCorrectionField(index, 'newValue', e.target.value)}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => removeCorrectionField(index)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={addCorrectionField}
+                              className="w-full"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add row
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="correction-reason">3. Reason for Correction</Label>
+                          <Textarea
+                            id="correction-reason"
+                            placeholder="My email changed after migration..."
+                            value={dataRequestForm.reason || ''}
+                            onChange={(e) => setDataRequestForm(prev => ({ ...prev, reason: e.target.value }))}
+                          />
+                        </div>
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            Note: We'll confirm via your new email or SMS once updated. Response in 15 days.
+                          </AlertDescription>
+                        </Alert>
+                      </>
+                    )}
+
+                    {/* Erase My Data Form */}
+                    {dataRequestType === 'ERASE' && (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">2. Scope of Erasure</h3>
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="entire-profile"
+                                checked={dataRequestForm.erasureScope === 'full'}
+                                onCheckedChange={(checked) => {
+                                  setDataRequestForm(prev => ({
+                                    ...prev,
+                                    erasureScope: checked ? 'full' : 'partial'
+                                  }));
+                                }}
+                              />
+                              <Label htmlFor="entire-profile">Entire Profile</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="specific-fields"
+                                checked={dataRequestForm.erasureScope === 'partial'}
+                                onCheckedChange={(checked) => {
+                                  setDataRequestForm(prev => ({
+                                    ...prev,
+                                    erasureScope: checked ? 'partial' : 'full'
+                                  }));
+                                }}
+                              />
+                              <Label htmlFor="specific-fields">Specific Fields:</Label>
+                              <div className="flex gap-2">
+                                {['Name', 'Email'].map((field) => (
+                                  <Badge key={field} variant="outline">{field}</Badge>
+                                ))}
+                                <Input placeholder="Other..." className="w-32" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">3. Consequences & Exceptions</h3>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                            <li>Erasure is irreversible.</li>
+                            <li>Some records may persist for legal requirements.</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">4. Confirmation</h3>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="confirm-erasure"
+                              checked={dataRequestForm.confirmErasure || false}
+                              onCheckedChange={(checked) => {
+                                setDataRequestForm(prev => ({ ...prev, confirmErasure: !!checked }));
+                              }}
+                            />
+                            <Label htmlFor="confirm-erasure">
+                              I understand the consequences and wish to proceed.
+                            </Label>
+                          </div>
+                        </div>
+                        <Alert>
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            Note: Erasure completed within 15 days. You will be notified when done.
+                          </AlertDescription>
+                        </Alert>
+                      </>
+                    )}
+
+                    {/* Port My Data Form */}
+                    {dataRequestType === 'PORTABILITY' && (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">2. Data Export Format</h3>
+                          <Select
+                            value={dataRequestForm.reason || 'JSON'}
+                            onValueChange={(value) => setDataRequestForm(prev => ({ ...prev, reason: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select format" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="JSON">JSON Format</SelectItem>
+                              <SelectItem value="CSV">CSV Format</SelectItem>
+                              <SelectItem value="XML">XML Format</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Alert>
+                          <Download className="h-4 w-4" />
+                          <AlertDescription>
+                            Note: Your data export will be available for download within 30 days.
+                          </AlertDescription>
+                        </Alert>
+                      </>
+                    )}
+
+                    {/* Nomination Form */}
+                    {dataRequestType === 'NOMINATION' && (
+                      <>
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">2. Nominee Details</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="nominee-name">Nominee Name</Label>
+                              <Input
+                                id="nominee-name"
+                                value={dataRequestForm.nomineeName || ''}
+                                onChange={(e) => setDataRequestForm(prev => ({ ...prev, nomineeName: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="nominee-relationship">Relationship</Label>
+                              <Select
+                                value={dataRequestForm.nomineeRelationship || ''}
+                                onValueChange={(value) => setDataRequestForm(prev => ({ ...prev, nomineeRelationship: value }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select relationship" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Spouse">Spouse</SelectItem>
+                                  <SelectItem value="Parent">Parent</SelectItem>
+                                  <SelectItem value="Sibling">Sibling</SelectItem>
+                                  <SelectItem value="Attorney">Attorney</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label htmlFor="nominee-contact">Nominee Contact (Phone)</Label>
+                              <Input
+                                id="nominee-contact"
+                                value={dataRequestForm.nomineeContact || ''}
+                                onChange={(e) => setDataRequestForm(prev => ({ ...prev, nomineeContact: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="nominee-email">Nominee Email</Label>
+                              <Input
+                                id="nominee-email"
+                                type="email"
+                                value={dataRequestForm.nomineeEmail || ''}
+                                onChange={(e) => setDataRequestForm(prev => ({ ...prev, nomineeEmail: e.target.value }))}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label htmlFor="nominee-address">Nominee Address</Label>
+                              <Textarea
+                                id="nominee-address"
+                                rows={3}
+                                value={dataRequestForm.nomineeAddress || ''}
+                                onChange={(e) => setDataRequestForm(prev => ({ ...prev, nomineeAddress: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">3. Scope of Proxy</h3>
+                          <p className="text-sm text-gray-600 mb-3">Select which rights you authorize your proxy to exercise on your behalf.</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {[
+                              'Access My Data',
+                              'Correct My Data',
+                              'Erase My Data',
+                              'Raise Grievances',
+                              'Modify/Withdraw Consent',
+                              'View Consent History',
+                              'Cookie Preferences'
+                            ].map((scope) => (
+                              <div key={scope} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={scope}
+                                  checked={dataRequestForm.proxyScope?.includes(scope)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setDataRequestForm(prev => ({
+                                        ...prev,
+                                        proxyScope: [...(prev.proxyScope || []), scope]
+                                      }));
+                                    } else {
+                                      setDataRequestForm(prev => ({
+                                        ...prev,
+                                        proxyScope: prev.proxyScope?.filter(s => s !== scope) || []
+                                      }));
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor={scope} className="text-sm">{scope}</Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">4. Proof of Authorization</h3>
+                          <p className="text-sm text-gray-600 mb-3">Upload a signed Power of Attorney or notarized authorization.</p>
+                          <div className="space-y-3">
+                            <div>
+                              <Label htmlFor="poa-document">Upload PoA Document</Label>
+                              <Input id="poa-document" type="file" accept=".pdf,.doc,.docx,.jpg,.png" />
+                            </div>
+                            <div>
+                              <Label htmlFor="id-proof">Upload ID Proof</Label>
+                              <Input id="id-proof" type="file" accept=".pdf,.jpg,.png" />
+                            </div>
+                            <Button type="button" variant="outline" size="sm">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add another document
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">5. Validity Period</h3>
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <Label htmlFor="validity-from">Proxy effective from</Label>
+                              <Input
+                                id="validity-from"
+                                type="date"
+                                value={dataRequestForm.validityFrom || ''}
+                                onChange={(e) => setDataRequestForm(prev => ({ ...prev, validityFrom: e.target.value }))}
+                              />
+                            </div>
+                            <span className="text-gray-500 mt-6">to</span>
+                            <div>
+                              <Label htmlFor="validity-to">to</Label>
+                              <Input
+                                id="validity-to"
+                                type="date"
+                                value={dataRequestForm.validityTo || ''}
+                                onChange={(e) => setDataRequestForm(prev => ({ ...prev, validityTo: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            Note: Your proxy request will be reviewed by our DPO within 48 hours. You can track status under "My Data Requests."
+                          </AlertDescription>
+                        </Alert>
+                      </>
+                    )}
+
+                    {/* Common Notification Preference */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">
+                        {dataRequestType === 'NOMINATION' ? '6. Notification Preference' : '4. Notification Preference'}
+                      </h3>
+                      <div className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="email-notification"
+                            name="notification"
+                            value="email"
+                            checked={dataRequestForm.notificationPreference === 'email'}
+                            onChange={(e) => setDataRequestForm(prev => ({ ...prev, notificationPreference: e.target.value as 'email' | 'sms' }))}
+                          />
+                          <Label htmlFor="email-notification">Email ({user.email})</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="sms-notification"
+                            name="notification"
+                            value="sms"
+                            checked={dataRequestForm.notificationPreference === 'sms'}
+                            onChange={(e) => setDataRequestForm(prev => ({ ...prev, notificationPreference: e.target.value as 'email' | 'sms' }))}
+                          />
+                          <Label htmlFor="sms-notification">SMS ({user.contactPhone})</Label>
+                        </div>
+                        {dataRequestType === 'NOMINATION' && (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="inapp-notification"
+                              name="notification"
+                              value="inapp"
+                            />
+                            <Label htmlFor="inapp-notification">In-App Notification</Label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Form Actions */}
+                    <div className="flex justify-end gap-4 pt-4 border-t">
+                      <Button variant="outline" onClick={resetDataRequestForm}>
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleDataRequestSubmit}
+                        disabled={
+                          !dataRequestForm.consentId ||
+                          (dataRequestType === 'ERASE' && !dataRequestForm.confirmErasure) ||
+                          (dataRequestType === 'NOMINATION' && (!dataRequestForm.nomineeName || !dataRequestForm.nomineeEmail))
+                        }
+                      >
+                        Submit {dataRequestType === 'NOMINATION' ? 'Nomination' : 
+                               dataRequestType === 'CORRECT' ? 'Correction' :
+                               dataRequestType === 'ERASE' ? 'Erasure' : 'Request'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Grievances Tab */}
@@ -1528,377 +2425,93 @@ export default function DataPrincipalDashboard() {
         </Card>
           </TabsContent>
 
-          {/* Settings Tab */}
+          {/* Privacy Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Preferences</CardTitle>
-                <CardDescription>
-                  Manage your privacy and notification settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-base font-medium">Preferred Language</Label>
-                    <Select defaultValue={user.preferredLanguage}>
-                      <SelectTrigger className="w-full mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="english">English</SelectItem>
-                        <SelectItem value="hindi">हिंदी (Hindi)</SelectItem>
-                        <SelectItem value="bengali">বাংলা (Bengali)</SelectItem>
-                        <SelectItem value="tamil">தமிழ் (Tamil)</SelectItem>
-                      </SelectContent>
-                    </Select>
-      </div>
-
-                  <Separator />
-
-                  <div>
-                    <Label className="text-base font-medium">Notification Preferences</Label>
-                    <div className="space-y-3 mt-3">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="email-notifications">Email Notifications</Label>
-                        <Switch id="email-notifications" defaultChecked={user.notificationPreferences.email} />
-    </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                        <Switch id="sms-notifications" defaultChecked={user.notificationPreferences.sms} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="app-notifications">In-App Notifications</Label>
-                        <Switch id="app-notifications" defaultChecked={user.notificationPreferences.inApp} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notice Management Tab */}
-          <TabsContent value="notices" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Consent Notices & Configurations</h2>
-              <Button onClick={() => setActiveTab('notices-config')}>
-                <FileText className="h-4 w-4 mr-2" />
-                Configure Notice Templates
-              </Button>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Privacy Settings</h2>
+                <p className="text-gray-600">Manage your privacy preferences and notification settings</p>
+              </div>
             </div>
 
             <div className="grid gap-6">
-              {/* Dynamic Notice Generation Demo */}
+              {/* Privacy Preferences */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-blue-600" />
-                    Dynamic Notice Generation
+                    <Shield className="h-5 w-5 text-blue-600" />
+                    Privacy Preferences
                   </CardTitle>
                   <CardDescription>
-                    Experience how consent notices are dynamically generated based on purposes and language
+                    Control how your data is used and shared
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <Label>Data Fiduciary</Label>
-                        <Select defaultValue="df_ecommerce">
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="df_ecommerce">ShopEasy E-commerce</SelectItem>
-                            <SelectItem value="df_fintech">SecureBank Digital</SelectItem>
-                            <SelectItem value="df_healthcare">HealthCare Plus</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="data-analytics">Data Analytics</Label>
+                        <p className="text-sm text-gray-600">Allow anonymous usage analytics to improve services</p>
                       </div>
+                      <Switch id="data-analytics" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
                       <div>
-                        <Label>Notice Language</Label>
-                        <Select defaultValue="english">
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="english">English</SelectItem>
-                            <SelectItem value="hindi">हिन्दी (Hindi)</SelectItem>
-                            <SelectItem value="bengali">বাংলা (Bengali)</SelectItem>
-                            <SelectItem value="tamil">தமிழ் (Tamil)</SelectItem>
-                            <SelectItem value="telugu">తెలుగు (Telugu)</SelectItem>
-                            <SelectItem value="marathi">मराठी (Marathi)</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="marketing-emails">Marketing Communications</Label>
+                        <p className="text-sm text-gray-600">Receive promotional emails and offers</p>
                       </div>
+                      <Switch id="marketing-emails" defaultChecked={false} />
                     </div>
-
-                    <div>
-                      <Label>Select Processing Purposes</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
-                        {[
-                          'Account Management',
-                          'Service Delivery', 
-                          'Marketing Communications',
-                          'Usage Analytics',
-                          'Personalization',
-                          'Security Monitoring',
-                          'Customer Support',
-                          'Legal Compliance'
-                        ].map(purpose => (
-                          <div key={purpose} className="flex items-center space-x-2">
-                            <Switch id={purpose} />
-                            <Label htmlFor={purpose} className="text-sm">{purpose}</Label>
-              </div>
-            ))}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="third-party-sharing">Third-party Data Sharing</Label>
+                        <p className="text-sm text-gray-600">Allow sharing with trusted partners</p>
                       </div>
+                      <Switch id="third-party-sharing" defaultChecked={false} />
                     </div>
-
-                    <Button className="w-full">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Generate Dynamic Notice
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Notice Templates Configuration */}
+              {/* Notification Settings */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5 text-purple-600" />
-                    Notice Template Configuration
+                    <Bell className="h-5 w-5 text-green-600" />
+                    Notification Settings
                   </CardTitle>
                   <CardDescription>
-                    Configure consent notice templates for different purposes and languages
+                    Choose how you want to be notified about important updates
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <Alert className="bg-blue-50 border-blue-200">
-                      <AlertTriangle className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-800">
-                        <strong>Enhanced BRD Implementation:</strong> This section demonstrates the complete notice workflow 
-                        including administrative setup, dynamic generation with templating engine, purpose mapping with unique IDs, 
-                        multi-language translation management, and enhanced consent artifacts with blockchain-style integrity verification.
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <Card className="bg-green-50 border-green-200">
-                        <CardContent className="pt-6">
-                          <div className="text-center">
-                            <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                            <h4 className="font-medium text-green-900">Purpose Mapping</h4>
-                            <p className="text-sm text-green-700 mt-1">
-                              Map data collection activities to specific purposes with unique Purpose IDs
-                            </p>
-                            <div className="mt-3 space-y-1 text-xs text-green-600">
-                              <div>• 8 Processing Categories</div>
-                              <div>• Essential vs Optional</div>
-                              <div>• Data Type Mapping</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-purple-50 border-purple-200">
-                        <CardContent className="pt-6">
-                          <div className="text-center">
-                            <Languages className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                            <h4 className="font-medium text-purple-900">Translation Management</h4>
-                            <p className="text-sm text-purple-700 mt-1">
-                              22 Indian languages from Eighth Schedule with translation keys
-                            </p>
-                            <div className="mt-3 space-y-1 text-xs text-purple-600">
-                              <div>• Dynamic Translation</div>
-                              <div>• RTL Language Support</div>
-                              <div>• Cultural Adaptation</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-orange-50 border-orange-200">
-                        <CardContent className="pt-6">
-                          <div className="text-center">
-                            <CheckCircle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                            <h4 className="font-medium text-orange-900">DPDP Compliance</h4>
-                            <p className="text-sm text-orange-700 mt-1">
-                              Automated compliance checking and validation
-                            </p>
-                            <div className="mt-3 space-y-1 text-xs text-orange-600">
-                              <div>• Legal Requirement Check</div>
-                              <div>• Accessibility (WCAG)</div>
-                              <div>• Audit Trail</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="email-notifications">Email Notifications</Label>
+                        <p className="text-sm text-gray-600">Receive updates via email</p>
+                      </div>
+                      <Switch id="email-notifications" defaultChecked={user.notificationPreferences.email} />
                     </div>
-          </div>
-        </CardContent>
-      </Card>
-
-              {/* Sample Generated Notice */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-gray-600" />
-                    Sample Generated Notice
-            </CardTitle>
-                  <CardDescription>
-                    Example of a dynamically generated consent notice with purpose mapping
-            </CardDescription>
-          </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6">
-                    <div className="space-y-6">
-                      {/* Notice Header */}
-                      <div className="text-center border-b pb-4">
-                        <h3 className="text-xl font-bold text-gray-900">Data Processing Notice</h3>
-                        <p className="text-sm text-gray-600 mt-1">Your Privacy Rights Under DPDP Act 2023</p>
-                        <div className="flex justify-center gap-2 mt-2">
-                          <Badge variant="outline">ShopEasy E-commerce</Badge>
-                          <Badge variant="outline">English</Badge>
-                          <Badge variant="outline">Version 2.0</Badge>
-                        </div>
-                      </div>
-
-                      {/* Purpose Sections */}
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Target className="h-4 w-4" />
-                          Purposes of Data Processing
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="bg-blue-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2 mb-1">
-                              <ShieldCheck className="h-4 w-4 text-blue-600" />
-                              <span className="font-medium text-blue-900">Account Management (Essential)</span>
-                              <Badge className="text-xs bg-blue-100 text-blue-800">Purpose ID: ACC_MGMT_001</Badge>
-                            </div>
-                            <p className="text-sm text-blue-800">Creating and managing your account, authentication, and basic service delivery</p>
-                            <p className="text-xs text-blue-600 mt-1">Data Types: Name, Email, Phone • Retention: Until account deletion</p>
-                          </div>
-
-                          <div className="bg-purple-50 p-3 rounded-lg">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Mail className="h-4 w-4 text-purple-600" />
-                              <span className="font-medium text-purple-900">Marketing Communications (Optional)</span>
-                              <Badge className="text-xs bg-purple-100 text-purple-800">Purpose ID: MKT_COMM_002</Badge>
-                            </div>
-                            <p className="text-sm text-purple-800">Sending promotional emails, SMS, and personalized offers</p>
-                            <p className="text-xs text-purple-600 mt-1">Data Types: Email, Preferences • Retention: 3 years or until withdrawal</p>
-                          </div>
-                        </div>
+                        <Label htmlFor="sms-notifications">SMS Notifications</Label>
+                        <p className="text-sm text-gray-600">Receive critical updates via SMS</p>
                       </div>
-
-                      {/* Rights Section */}
+                      <Switch id="sms-notifications" defaultChecked={user.notificationPreferences.sms} />
+                    </div>
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Scale className="h-4 w-4" />
-                          Your Rights Under DPDP Act 2023
-                        </h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            Right to access your data
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            Right to correct data
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            Right to erase data
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            Right to data portability
-                          </div>
-                        </div>
+                        <Label htmlFor="app-notifications">In-App Notifications</Label>
+                        <p className="text-sm text-gray-600">Show notifications within the application</p>
                       </div>
-
-                      {/* Contact Information */}
-                      <div className="bg-gray-100 p-3 rounded-lg">
-                        <h4 className="font-semibold text-gray-900 mb-2">Contact Information</h4>
-                        <div className="text-sm text-gray-700 space-y-1">
-                          <p>Data Protection Officer: dpo@shopeasy.com</p>
-                          <p>Grievance Officer: grievance@shopeasy.com</p>
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="app-notifications" defaultChecked={user.notificationPreferences.inApp} />
                       </div>
-
-                      {/* Translation Indicator */}
-                      <Alert className="bg-green-50 border-green-200">
-                        <Globe className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800">
-                          <strong>Multi-language Support:</strong> This notice is available in 22 Indian languages. 
-                          Language preference is automatically detected and can be changed anytime.
-                        </AlertDescription>
-                      </Alert>
                     </div>
                   </div>
-          </CardContent>
-        </Card>
-
-              {/* Notice Workflow Process */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-yellow-600" />
-                    Complete Notice Workflow Process
-            </CardTitle>
-                  <CardDescription>
-                    Step-by-step implementation of the BRD notice workflow
-            </CardDescription>
-          </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mx-auto mb-2">1</div>
-                        <h4 className="font-medium text-blue-900">Admin Configuration</h4>
-                        <p className="text-xs text-blue-700 mt-1">Purpose mapping, template design, translation keys</p>
-                      </div>
-                      
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <div className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mx-auto mb-2">2</div>
-                        <h4 className="font-medium text-purple-900">Trigger Detection</h4>
-                        <p className="text-xs text-purple-700 mt-1">User interaction triggers notice generation</p>
-                      </div>
-                      
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mx-auto mb-2">3</div>
-                        <h4 className="font-medium text-green-900">Dynamic Generation</h4>
-                        <p className="text-xs text-green-700 mt-1">Purpose selection, language translation</p>
-                      </div>
-                      
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <div className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mx-auto mb-2">4</div>
-                        <h4 className="font-medium text-orange-900">User Interaction</h4>
-                        <p className="text-xs text-orange-700 mt-1">Granular consent, explicit controls</p>
-                      </div>
-                      
-                      <div className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="bg-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mx-auto mb-2">5</div>
-                        <h4 className="font-medium text-gray-900">Artifact Creation</h4>
-                        <p className="text-xs text-gray-700 mt-1">Tagging, metadata, audit logging</p>
-                      </div>
-                    </div>
-
-                    <Alert className="bg-yellow-50 border-yellow-200">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <AlertDescription className="text-yellow-800">
-                        <strong>Implementation Note:</strong> This demonstrates the complete BRD workflow including 
-                        administrative setup, dynamic generation, multi-language support, and purpose tagging as 
-                        required for DPDP Act 2023 compliance.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
