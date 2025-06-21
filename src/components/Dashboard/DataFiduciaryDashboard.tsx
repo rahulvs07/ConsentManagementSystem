@@ -61,8 +61,7 @@ import {
   Trash2,
   Plus,
   Link,
-  Unlink,
-  User
+  Unlink
 } from 'lucide-react';
 import { ConsentStatus, ProcessingPurpose, AuditAction, User as UserType, ConsentRecord, GrievanceTicket, GrievanceCategory, GrievanceStatus, GrievancePriority } from '@/types/dpdp';
 import ActivityHistory from '@/components/ui/activity-history';
